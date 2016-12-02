@@ -67,9 +67,9 @@ Tel qu'actuellement configuré, le modèle de propagation épargne entre 5% et 1
 ![](figures/tsfExample.gif)
 
 
-À ce stade, le modèle de feu est relativement simple, mais pourraient s'ajouter au besoin quelques autres éléments pour en augmenter le réalisme. Comme par exemple:
+À ce stade, le modèle de feu est relativement simple, mais pourraient s'ajouter au besoin quelques autres éléments pour en augmenter le réalisme ou pour tester certaines hypothèses. Comme par exemple:
 
-* Variabilité temporelle du risque de feux
+* Variabilité temporelle du risque de feux (ex. changements climatiques)
 * Effets de la topographie
 * Effets des vents dominants
 * Risque de feu variable en fonction des combustibles
@@ -78,7 +78,9 @@ Tel qu'actuellement configuré, le modèle de propagation épargne entre 5% et 1
 
 ### Propriétés d'un ensemble de simulation
 
-Afin de vérifier le bon fonctionnement du modèle de feu, nous avons effectué 1000 simulations et quantifié les cycles de feux réalisés. Ces simulations confirment que les régimes de feux sont globalement correctement simulés. Par contre, elles montrent aussi que les plus petites portions du territoire à l'étude, par effet de contagion, sont affectées par les régimes de feu des zones adjacentes. Cela est particulièrement notable pour les régions en principe soumises à des cycles de feux relativement longs (ex. G7 et G8) Cela est tout à fait normal compte tenu que les frontières ne sont pas imperméables à la propagation des feux d'une zone à l'autre.
+Afin de vérifier le bon fonctionnement du modèle de feu, nous avons effectué 1000 simulations et quantifié les cycles de feux réalisés.
+
+Ces simulations confirment que les régimes de feux sont globalement correctement simulés. Par contre, elles montrent aussi que les plus petites portions du territoire à l'étude, par effet de contagion, sont affectées par les régimes de feu des zones adjacentes. Cela est particulièrement notable pour les régions en principe soumises à des cycles de feux relativement longs (ex. G7 et G8) Cela est tout à fait normal compte tenu que les frontières ne sont pas imperméables à la propagation des feux d'une zone à l'autre.
 
 
 ![](figures/realizedFC.png)
