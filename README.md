@@ -1,6 +1,8 @@
 # Analyse de risque d'accident de régénération (en développement)
 Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier et Tadeusz Splawinski  
 
+Mis à jour le 02 Dec 2016
+
 
 -------
 
