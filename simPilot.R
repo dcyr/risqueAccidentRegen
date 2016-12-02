@@ -79,7 +79,7 @@ registerDoSNOW(cl)
 
 ##
 t1 <- Sys.time()
-foreach(i = 0) %dopar%  {
+foreach(i = 1:nrep) %dopar%  {
     require(stringr)
     print(paste("simulating replicate", i))
     output <- sim(tsfInit, simDuration,
