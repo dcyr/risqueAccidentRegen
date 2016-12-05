@@ -24,6 +24,7 @@ convFactor <- prod(res(studyArea))/10000### to convert to hectares
 fireZoneArea <- zonal(!is.na(fireZones), fireZones, sum)
 fireZoneArea <- data.frame(zone = as.character(fireRegimeAttrib[match(fireZoneArea[,1], fireRegimeAttrib$ID),"Zone_LN"]),
                            areaZone_ha = fireZoneArea[,2] * convFactor)
+fireZoneArea <- rbind(fireZoneArea, data.frame(zone = "total", areaZone_ha = sum(fireZoneArea$areaZone_ha)))
 
 ####################################################################
 ####################################################################
