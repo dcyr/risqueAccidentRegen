@@ -15,12 +15,12 @@ rm(wwd)
 ####################################################################
 ######
 require(raster)
-studyAreas <- raster("../data/studyArea.tif")
+studyArea <- raster("../data/studyArea.tif")
 fireZones <- raster("../data/fireZones.tif")
 fireRegimeAttrib <- read.csv("../data/fireZones.csv")
-fireZones[is.na(studyAreas)] <- NA 
+fireZones[is.na(studyArea)] <- NA 
 ##
-convFactor <- prod(res(studyAreas))/10000### to convert to hectares
+convFactor <- prod(res(studyArea))/10000### to convert to hectares
 fireZoneArea <- zonal(!is.na(fireZones), fireZones, sum)
 fireZoneArea <- data.frame(zone = as.character(fireRegimeAttrib[match(fireZoneArea[,1], fireRegimeAttrib$ID),"Zone_LN"]),
                            areaZone_ha = fireZoneArea[,2] * convFactor)
@@ -59,15 +59,19 @@ outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar%
 
     ## compiling 'true' FC statistics
     tmp <- zonal(tsfStack, fireZones, "mean")
+    tmpTotal <- zonal(tsfStack, studyArea, "mean")
     zoneID  <- tmp[,1]
-    meanTSF <-  round(t(tmp[,-1]))
+    meanTSF <-  round(cbind(t(tmp[,-1]), tmpTotal[,-1])) 
+    
     areaBurned <- t(zonal(tsfStack == 0, fireZones,  "sum")[,-1]) * convFactor
+    areaBurned <- data.frame(areaBurned, total = apply(areaBurned, 1, "sum"))
     ##
     year <- as.numeric(gsub("[^0-9]", "", rownames(meanTSF)))
-    colnames(meanTSF) <-  colnames(areaBurned) <- fireRegimeAttrib[match(zoneID, fireRegimeAttrib$ID), "Zone_LN"]
+    colnames(meanTSF) <-  colnames(areaBurned) <- c(as.character(fireRegimeAttrib[match(zoneID, fireRegimeAttrib$ID), "Zone_LN"]),
+                                                    "total")
 
-    meanTSF <- data.frame(year, replicate = r, meanTSF)
-    areaBurned <- data.frame(year, replicate = r, areaBurned)
+    meanTSF <- data.frame(year, replicate = replicates[r], meanTSF)
+    areaBurned <- data.frame(year, replicate = replicates[r], areaBurned)
 
 
     meanTSF <- melt(meanTSF, id.vars = c("year", "replicate"),
@@ -77,7 +81,7 @@ outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar%
 
     out <- merge(meanTSF, areaBurned)
     out <- arrange(out, zone, year)
-
+    print(r)
     return(out)
 }
 
