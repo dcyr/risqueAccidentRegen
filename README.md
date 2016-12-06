@@ -1,7 +1,7 @@
 # Analyse de risque d'accident de régénération (en développement)
 Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier et Tadeusz Splawinski  
 
-Mis à jour le 05 Dec 2016
+Mis à jour le 06 Dec 2016
 
 
 -------
@@ -80,7 +80,11 @@ Tel qu'actuellement configuré, le modèle de propagation épargne entre 5% et 1
 
 Afin de vérifier le bon fonctionnement du modèle de feu, nous avons effectué 1000 simulations et quantifié les cycles de feux réalisés.
 
-Ces simulations confirment que les régimes de feux sont globalement correctement simulés. Par contre, elles montrent aussi que les plus petites portions du territoire à l'étude, par effet de contagion, sont affectées par les régimes de feu des zones adjacentes. Cela est particulièrement notable pour les régions en principe soumises à des cycles de feux relativement longs (ex. zones G7 et G8). Cela est tout à fait normal compte tenu que les frontières ne sont pas imperméables à la propagation des feux d'une zone à l'autre.
+Ces simulations confirment que les régimes de feux sont presque parfaitement simulés pour l'ensemble du territoire à l'étude.
+
+Par contre, elles montrent que les plus petites portions du territoire à l'étude, par effet de contagion, sont affectées par les régimes de feu des zones adjacentes. Cela est particulièrement notable pour les petites régions en principe soumises à des cycles de feux relativement longs, mais situées à proximité de régions brûlant davantage (ex. zones G7 et G8). Cela est tout à fait normal compte tenu que les frontières ne sont pas imperméables à la propagation des feux d'une zone à l'autre.
+
+De plus, la variabilité simulée sera plus grande lorsque la zone est petite par rapport à la taille moyenne des feux, ainsi que lorsque le cycle ciblé est long par rapport à la durée de la simulation (ici 50 ans). Cela est cohérent avec les observations empiriques documentées ainsi qu'avec les expériences de simulation antérieures.
 
 
 ![](figures/realizedFC.png)
