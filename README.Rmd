@@ -1,12 +1,39 @@
-# Analyse de risque d'accident de régénération (en développement)
-Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier et Tadeusz Splawinski  
+---
+title: "Analyse de risque d'accident de régénération (en développement)"
+author: "Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier et Tadeusz Splawinski"
+output:
+  html_document:
+    keep_md: yes
+    theme: cosmo
+    toc: yes
+  pdf_document:
+    toc: yes
+---
 
-Mis à jour le 06 Dec 2016
+Mis à jour le `r format(Sys.time(), "%d %b %Y")`
 
 
 -------
 
+```{r, echo=FALSE, include=FALSE}
+require(raster)
+#require(rgeos)
+require(rgdal)
+setwd("~/Travail/SCF/regenFailureRiskAssessment/")
+studyArea <- raster("./data/studyArea.tif")
+convFactor <- prod(res(studyArea))/10000
+fireZones <- raster("./data/fireZones.tif")
 
+studyAreaP <- get(load("./data/studyAreaP.RData"))
+studyAreaTotal <- rasterize(studyAreaP, studyArea)
+studyAreaTotal[!is.na(studyAreaTotal)] <- 1
+studyAreaTotal <- sum(values(studyAreaTotal), na.rm = T) *convFactor
+flammableProp <- sum(values(studyArea), na.rm = T) *convFactor /studyAreaTotal
+fireRegimeAttrib <- read.csv("./data/fireZones.csv")
+cycleGlobal <- fireRegimeAttrib[which(fireRegimeAttrib$Zone_LN == "total"), 2]
+##
+### to convert to hectares
+```
 
 ## Contexte
 
@@ -23,10 +50,15 @@ Un modèle de succès de régénération après feux, dépendant des conditions 
 
 ## Territoire à l'étude
 
-Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de 1.3 Mha, dont 10.1% est constitué de grands cours d'eau. 
+Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de `r round(studyAreaTotal/1000000, 1)` Mha, dont `r 100 -round(flammableProp*100, 1)`% est constitué de grands cours d'eau. 
 
 
-<img src="README_files/figure-html/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
+```{r fig.height = 6, fig.align = "center", echo=FALSE}
+library(png)
+library(grid)
+img <- readPNG("figures/studyAreaLargeScale.png")
+ grid.raster(img)
+```
 
 
 ------------
@@ -80,7 +112,7 @@ Tel qu'actuellement configuré, le modèle de propagation épargne entre 5% et 1
 
 Afin de vérifier le bon fonctionnement du modèle de feu, nous avons effectué 1000 simulations et quantifié les cycles de feux réalisés.
 
-Ces simulations confirment que les régimes de feux sont presque parfaitement simulés pour le territoire à l'étude dans son ensemble (cycle global de 101 ans).
+Ces simulations confirment que les régimes de feux sont presque parfaitement simulés pour le territoire à l'étude dans son ensemble (cycle global de `r cycleGlobal` ans).
 
 Par contre, elles montrent que les plus petites portions du territoire à l'étude, par effet de contagion, sont affectées par les régimes de feu des zones adjacentes. Cela est particulièrement notable pour les petites régions en principe soumises à des cycles de feux relativement longs, mais situées à proximité de régions brûlant davantage (ex. zones G7 et G8). Cela est tout à fait normal compte tenu que les frontières ne sont pas imperméables à la propagation des feux d'une zone à l'autre.
 
