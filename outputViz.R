@@ -26,6 +26,7 @@ convFactor <- prod(res(studyArea))/10000### to convert to hectares
 fireZoneArea <- zonal(!is.na(fireZones), fireZones, sum)
 fireZoneArea <- data.frame(zone = as.character(fireRegimeAttrib[match(fireZoneArea[,1], fireRegimeAttrib$ID),"Zone_LN"]),
                            areaZone_ha = fireZoneArea[,2] * convFactor)
+fireZoneArea <- rbind(fireZoneArea, data.frame(zone = "total", areaZone_ha = sum(fireZoneArea$areaZone_ha)))
 #############################################################
 #############################################################
 outputCompiled <- get(load("../compiledOutputs/outputCompiled.RData"))
@@ -47,7 +48,7 @@ fcSummary <- outputSummary %>%
 fireRegimeAttrib <- merge(fireRegimeAttrib, fcSummary, by.x = "Zone_LN", by.y = "zone")                     
 colnames(fireRegimeAttrib)[1] <- "zone"
 fireRegimeAttrib <- merge(fireRegimeAttrib, fireZoneArea)
-fireRegimeAttrib[, "firezoneProp"] <- fireRegimeAttrib$areaZone_ha/sum(fireRegimeAttrib$areaZone_ha)
+fireRegimeAttrib[, "firezoneProp"] <- fireRegimeAttrib$areaZone_ha/sum(fireRegimeAttrib$areaZone_ha)*2
 
 
 
@@ -58,10 +59,11 @@ m <- ggplot(outputSummary, aes(x=fireCycle)) +
     facet_wrap(~zone) +#, scales = "free_x") +
     
     scale_x_log10(breaks = c(30, 62.5, 125, 250, 500, 1000, 2000, 4000, 16000)) +
-    geom_vline(data = fireRegimeAttrib,  aes(xintercept = realizedFC_mean), 
-               colour="yellow", linetype = 3, size = 0.6, alpha = 1) +
     geom_vline(data = fireRegimeAttrib,  aes(xintercept = Fire_Cycle), 
-               colour="lightblue", linetype = 3, size = 0.6, alpha = 1)
+               colour="lightblue", linetype = 3, size = 0.7, alpha = 1) +
+    geom_vline(data = fireRegimeAttrib,  aes(xintercept = realizedFC_mean), 
+               colour="yellow", linetype = 3, size = 0.5, alpha = 1)
+
 
 
 yMax <- layer_scales(m)$y$range$range[2]
