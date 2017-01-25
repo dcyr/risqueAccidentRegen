@@ -1,6 +1,6 @@
 ####################################################################################################
 ####################################################################################################
-###### Preparation of initial landscape (for simulation of fires)
+###### Preparation of initial landscape (for fire model)
 ######
 ###### Dominic Cyr, in collaboration with Tadeusz Splawinski and Sylvie Gauthier
 rm(list = ls())
