@@ -19,7 +19,7 @@ setwd(wwd)
 require(raster)
 studyArea <- raster("../data/studyArea.tif")
 fireZones <- raster("../data/fireZones.tif")
-fireRegimeAttrib <- read.csv("../data/fireZones.csv")
+fireRegimeAttrib <- read.csv("../data/fireZoneTable.csv")
 fireZones[is.na(studyArea)] <- NA 
 ##
 convFactor <- prod(res(studyArea))/10000### to convert to hectares
@@ -29,75 +29,83 @@ fireZoneArea <- data.frame(zone = as.character(fireRegimeAttrib[match(fireZoneAr
 fireZoneArea <- rbind(fireZoneArea, data.frame(zone = "total", areaZone_ha = sum(fireZoneArea$areaZone_ha)))
 
 
-# #############################################################
-# #############################################################
-# outputCompiled <- get(load("../compiledOutputs/outputCompiled.RData"))
-# 
-# require(dplyr)
-# outputSummary <- outputCompiled %>%
-#     group_by(zone, replicate) %>%
-#     summarize(meanTSF = round((mean(meanTSF))),
-#               fireCycle = round((1/mean(areaBurned_ha/areaZone_ha))),
-#               propAAB = mean(areaBurned_ha/areaZone_ha)) %>%
-#     arrange(zone, replicate)
-# 
-# fcSummary <- outputSummary %>%
-#     group_by(zone) %>%
-#     summarize(realizedFC_median = median(fireCycle),
-#               realizedFC_mean = 1/mean(propAAB))
-# 
-# 
-# fireRegimeAttrib <- merge(fireRegimeAttrib, fcSummary, by.x = "Zone_LN", by.y = "zone")                     
-# colnames(fireRegimeAttrib)[1] <- "zone"
-# fireRegimeAttrib <- merge(fireRegimeAttrib, fireZoneArea)
-# fireRegimeAttrib[, "firezoneProp"] <- fireRegimeAttrib$areaZone_ha/sum(fireRegimeAttrib$areaZone_ha)*2
-# 
-# 
-# 
-# require(ggplot2)
-# options(scipen=999)
-# m <- ggplot(outputSummary, aes(x=fireCycle)) +
-#     geom_histogram() +#fill = "grey25"
-#     facet_wrap(~zone) +#, scales = "free_x") +
-#     
-#     scale_x_log10(breaks = c(30, 62.5, 125, 250, 500, 1000, 2000, 4000, 16000)) +
-#     geom_vline(data = fireRegimeAttrib,  aes(xintercept = Fire_Cycle), 
-#                colour="lightblue", linetype = 3, size = 0.7, alpha = 1) +
-#     geom_vline(data = fireRegimeAttrib,  aes(xintercept = realizedFC_mean), 
-#                colour="yellow", linetype = 3, size = 0.5, alpha = 1)
-# 
-# 
-# 
-# yMax <- layer_scales(m)$y$range$range[2]
-# xMax <- layer_scales(m)$x$range$range[2]
-# 
-# labelDF <-  data.frame(x = 10^xMax, y = yMax, zone = fireRegimeAttrib$zone,
-#                        prop = paste0("Prop. terr. ", round(fireRegimeAttrib$firezoneProp*100), "%"),
-#                        target = paste("Cible:", fireRegimeAttrib$Fire_Cycle, "ans"),
-#                        mean = paste("Moy.:", round(fireRegimeAttrib$realizedFC_mean), "ans"))
-# 
-# png(filename="realizedFC.png",
-#     width = 10, height = 5, units = "in", res = 600, pointsize=10)
-# 
-# print(m + theme_dark() +
-#           theme(legend.position="top", legend.direction="horizontal",
-#                 axis.text.x = element_text(angle = 45, hjust = 1),
-#                 strip.text.y = element_text(size = 8))+
-#           labs(title ="Distribution des cycles de feux réalisés",
-#                subtitle = "Les lignes pointillées indiquent pour chacune des zones les valeurs ciblées (bleu) et les moyennes réalisées* (jaune).",
-#                caption = paste("*Total de", length(unique(outputSummary$replicate)), "simulations d'une durée de 50 ans" ),
-#                x = "Cycle des feux (années)",
-#                y = "Fréquence") +
-#           geom_text(aes(x, y, label = prop),
-#                     data = labelDF, hjust = 1, size = 3, fontface = 1) +
-#           geom_text(aes(x, 0.85*y, label = target),
-#                     data = labelDF, hjust = 1, size = 3, colour = "lightblue") +
-#           geom_text(aes(x, 0.75*y, label = mean),
-#                     data = labelDF, hjust = 1, size = 3, colour = "yellow"))
-#           
-#     
-# 
-# dev.off()
+#############################################################
+#############################################################
+
+
+
+outputCompiled <- get(load("../compiledOutputs/outputCompiled.RData"))
+#############################
+#############################
+#############################
+#### here create a loop for illustrating scenarios separately
+
+
+require(dplyr)
+outputSummary <- outputCompiled %>%
+    group_by(zone, replicate) %>%
+    summarize(meanTSF = round((mean(meanTSF))),
+              fireCycle = round((1/mean(areaBurned_ha/areaZone_ha))),
+              propAAB = mean(areaBurned_ha/areaZone_ha)) %>%
+    arrange(zone, replicate)
+
+fcSummary <- outputSummary %>%
+    group_by(zone) %>%
+    summarize(realizedFC_median = median(fireCycle),
+              realizedFC_mean = 1/mean(propAAB))
+
+
+fireRegimeAttrib <- merge(fireRegimeAttrib, fcSummary, by.x = "Zone_LN", by.y = "zone")
+colnames(fireRegimeAttrib)[1] <- "zone"
+fireRegimeAttrib <- merge(fireRegimeAttrib, fireZoneArea)
+fireRegimeAttrib[, "firezoneProp"] <- fireRegimeAttrib$areaZone_ha/sum(fireRegimeAttrib$areaZone_ha)*2
+
+
+
+require(ggplot2)
+options(scipen=999)
+m <- ggplot(outputSummary, aes(x=fireCycle)) +
+    geom_histogram() +#fill = "grey25"
+    facet_wrap(~zone) +#, scales = "free_x") +
+
+    scale_x_log10(breaks = c(30, 62.5, 125, 250, 500, 1000, 2000, 4000, 16000)) +
+    geom_vline(data = fireRegimeAttrib,  aes(xintercept = fireCycle),
+               colour="lightblue", linetype = 3, size = 0.7, alpha = 1) +
+    geom_vline(data = fireRegimeAttrib,  aes(xintercept = realizedFC_mean),
+               colour="yellow", linetype = 3, size = 0.5, alpha = 1)
+
+
+
+yMax <- layer_scales(m)$y$range$range[2]
+xMax <- layer_scales(m)$x$range$range[2]
+
+labelDF <-  data.frame(x = 10^xMax, y = yMax, zone = fireRegimeAttrib$zone,
+                       prop = paste0("Prop. terr. ", round(fireRegimeAttrib$firezoneProp*100), "%"),
+                       target = paste("Cible:", fireRegimeAttrib$Fire_Cycle, "ans"),
+                       mean = paste("Moy.:", round(fireRegimeAttrib$realizedFC_mean), "ans"))
+
+png(filename="realizedFC.png",
+    width = 10, height = 5, units = "in", res = 600, pointsize=10)
+
+print(m + theme_dark() +
+          theme(legend.position="top", legend.direction="horizontal",
+                axis.text.x = element_text(angle = 45, hjust = 1),
+                strip.text.y = element_text(size = 8))+
+          labs(title ="Distribution des cycles de feux réalisés",
+               subtitle = "Les lignes pointillées indiquent pour chacune des zones les valeurs ciblées (bleu) et les moyennes réalisées* (jaune).",
+               caption = paste("*Total de", length(unique(outputSummary$replicate)), "simulations d'une durée de 50 ans" ),
+               x = "Cycle des feux (années)",
+               y = "Fréquence") +
+          geom_text(aes(x, y, label = prop),
+                    data = labelDF, hjust = 1, size = 3, fontface = 1) +
+          geom_text(aes(x, 0.85*y, label = target),
+                    data = labelDF, hjust = 1, size = 3, colour = "lightblue") +
+          geom_text(aes(x, 0.75*y, label = mean),
+                    data = labelDF, hjust = 1, size = 3, colour = "yellow"))
+
+
+
+dev.off()
 
 
 
@@ -135,7 +143,7 @@ studyAreaF <- fortify(studyAreaP)
 
 ################################
 
-output <- get(load("../outputs/simOutput_003.RData"))
+output <- get(load("../outputs/simFire_RCP85_000.RData"))
 #output <- get(load("simOutput_002.RData"))
 
 require(doSNOW)
@@ -163,7 +171,13 @@ fTitle <- foreach(l = 1:nlayers(output$tsf), .combine = c) %dopar%  {
     rNA[,3] <- NA
     colnames(rNA)[3] <- colnames(df)[3]
     df <- rbind(df, data.frame(rNA))
-
+    
+    # ### adding a mask outside of study area
+    # mask <- rasterize(studyAreaP, r)
+    # mask <- is.na(mask)
+    # mask[mask==0] <- NA
+    # dfMask <- as.data.frame(rasterToPoints(mask))
+        
     ### plotting parameters
     pWidth  <- 1400
     pHeight <- 1200

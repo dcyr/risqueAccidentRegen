@@ -21,15 +21,41 @@ require(parallel)
 require(foreach)
 # #######
 
+# ########################################
+# #########  initial tsf, a little long...
+# #########  uncomment only if needed
+# ### loading shapefiles
+# forestInventory <- readOGR(dsn = "../gis", layer = "forestInventory")
+# 
+# ### loading study area
+# studyArea <- raster("../data/studyArea.tif")
+# 
+# # defining projection (Quebec Lambert NAD93), and reprojecting for study area
+# proj4string(forestInventory) <- CRS("+init=epsg:32198")
+# forestInventory <- spTransform(forestInventory, CRSobj = crs(studyArea))
+# 
+# 
+# tsfInit <- rasterize(forestInventory, studyArea, field = "Stand_Age")
+# tsfInit[tsfInit == 999] <- NA
+# 
+# tsfInitDf <- rasterToPoints(tsfInit)
+# colnames(tsfInitDf)[3] <- "tsf"
+# 
+# ### saving rasters raster (tif and DF formats)
+# writeRaster(tsfInit, file = "tsfInit.tif", overwrite = T)
+# save(tsfInitDf, file = "tsfInitDf.RData")
+
+
 
 ########################################
 ########################################
-coverTypes <- get(load("../data/coverTypesTmp.RData"))
-tsfInit <- get(load("../data/tsfInitTmp.RData"))
+coverTypes <- get(load("../data/coverTypesDf.RData"))
+tsfInit <- get(load("../data/tsfInitDf.RData"))
+########################################
 
 fireZones <- raster("../data/fireZones.tif")
 fireZones <- rasterToPoints(fireZones)
-fireZoneNames <- read.csv("../data/fireZones.csv")
+fireZoneNames <- read.csv("../data/fireZoneTable.csv")
 
 df <- merge(coverTypes, tsfInit)
 df <- merge(df, fireZones)
@@ -38,10 +64,10 @@ df[,"Zone_LN"] <- fireZoneNames[match(df$fireZones, fireZoneNames$ID) , "Zone_LN
 # df <- df %>%
 #    filter(descrip %in% c("EN", "PG"))
 df[, "cover"] <- NA
-index <- which(df$descrip %in% c("R", "Improductif", "INO", "Non_Forestiere", "EAU"))
+index <- which(df$descrip %in% c( "Improductif", "INO", "Non_Forestiere", "EAU"))
 df[index, "cover"] <- "autres"
-index <- which(df$descrip %in% c("EN", "F", "PG"))
-df[index, "cover"] <- df[index, "descrip"]
+index <- which(df$descrip %in% c("EN", "F", "PG", "R"))
+df[index, "cover"] <- as.character(df[index, "descrip"])
 
 
 require(ggplot2)
@@ -49,13 +75,13 @@ require(ggplot2)
 pWidth  <- 1400
 pHeight <- 1200
 pointsize <- 8
-maxVal <- max(df$tsfInit, na.rm = T)
+maxVal <- max(df$tsf, na.rm = T)
 colValues <- c(0, 10, 25, 50, maxVal)
 
 cols = c("red", "orange", "gold2", "forestgreen", "darkgreen")
 
 ### plotting initial tsf
-p <- ggplot(data = df, aes_string("x", "y", fill = "tsfInit")) +
+p <- ggplot(data = df, aes_string("x", "y", fill = "tsf")) +
     theme_bw() +
     geom_raster() +
     coord_fixed() +
@@ -87,14 +113,14 @@ dev.off()
 #### summarizing by area and fire zones
 require(dplyr)
 tsfInitSummary <- df %>%
-    group_by(cover, Zone_LN, tsfInit) %>%
+    group_by(cover, Zone_LN, tsf) %>%
     summarise(area_ha = n()*25) %>%
-    arrange(tsfInit,Zone_LN, cover)
+    arrange(tsf, Zone_LN, cover)
 
 write.csv(tsfInitSummary, file = "tsfInitSummary.csv", row.names = F)
 
 tsfInitGlobal <- tsfInitSummary %>%
-    group_by(tsfInit)  %>%
+    group_by(tsf)  %>%
     summarize(area_ha = sum(area_ha)) %>%
     mutate(cover = "Global",
            Zone_LN = "Global")
@@ -103,7 +129,7 @@ tsfInitGlobal <- tsfInitSummary %>%
 
 
 tsfInitSummary <- rbind(tsfInitSummary, tsfInitGlobal)
-coverLevels <- c(EN = "Épinette", PG = "Pin gris", F = "Feuillu", autres = "autres", Global = "Global")
+coverLevels <- c(EN = "Épinette", PG = "Pin gris", F = "Feuillu", R = "Résineux", autres = "autres", Global = "Global")
 
 tsfInitSummary$cover <- factor(coverLevels[tsfInitSummary$cover], levels = coverLevels)
 
@@ -114,7 +140,7 @@ png(filename="tsfDistribFireZones.png",
 
 
 options(scipen=999)
-ggplot(data = tsfInitSummary, aes(x = tsfInit, weight = area_ha)) +
+ggplot(data = tsfInitSummary, aes(x = tsf, weight = area_ha)) +
     geom_histogram(breaks = seq(from = 0, to = 150, by = 10)) +
     theme_dark() +
     facet_wrap(~Zone_LN) +
@@ -132,7 +158,7 @@ png(filename="tsfDistribCover.png",
 
 
 options(scipen=999)
-ggplot(data = tsfInitSummary, aes(x = tsfInit, weight = area_ha)) +
+ggplot(data = tsfInitSummary, aes(x = tsf, weight = area_ha)) +
     geom_histogram(breaks = seq(from = 0, to = 150, by = 10)) +
     theme_dark() +
     facet_wrap(~cover) +

@@ -5,7 +5,7 @@ rm(list=ls())
 ####################################################################
 ####################################################################
 setwd("~/Travail/SCF/regenFailureRiskAssessment/")
-outputFolder <- paste(getwd(), "outputs", sep="/")
+outputFolder <- paste(getwd(), "outputs/", sep="/")
 wwd <- paste(getwd(), Sys.Date(), sep="/")
 dir.create(wwd)
 setwd(wwd)
@@ -17,7 +17,7 @@ rm(wwd)
 require(raster)
 studyArea <- raster("../data/studyArea.tif")
 fireZones <- raster("../data/fireZones.tif")
-fireRegimeAttrib <- read.csv("../data/fireZones.csv")
+fireRegimeAttrib <- read.csv("../data/fireZoneTable.csv")
 fireZones[is.na(studyArea)] <- NA 
 ##
 convFactor <- prod(res(studyArea))/10000### to convert to hectares
@@ -35,7 +35,8 @@ x <- list.files(outputFolder)
 x <- x[grep(".RData", x)]
 simInfo <- gsub(".RData", "", x)
 simInfo <- strsplit(simInfo, "_")
-replicates <- as.numeric(lapply(simInfo, function(x) x[2]))
+scenario <- as.character(lapply(simInfo, function(x) x[[2]]))
+replicates <- as.numeric(lapply(simInfo, function(x) x[3]))
 ###########################################
 ###########################################
 
@@ -43,6 +44,7 @@ replicates <- as.numeric(lapply(simInfo, function(x) x[2]))
 require(doSNOW)
 require(parallel)
 require(foreach)
+# clusterN <- 2
 clusterN <-  max(1, floor(0.9*detectCores()))  ### choose number of nodes to add to cluster.
 # #######
 cl = makeCluster(clusterN, outfile = "") ##
@@ -53,8 +55,9 @@ outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar%
     require(raster)
     require(reshape2)
     require(dplyr)
+    s <- scenario[r]
     output <- get(load(paste(outputFolder, x[r], sep="/")))
-
+    
     ##
     tsfStack <- output[["tsf"]]
 
@@ -81,7 +84,8 @@ outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar%
                        variable.name = "zone", value.name = "areaBurned_ha")
 
     out <- merge(meanTSF, areaBurned)
-    out <- arrange(out, zone, year)
+    out <- data.frame(scenario = s, out)
+    out <- arrange(out, scenario, zone, year)
     print(r)
     return(out)
 }
@@ -89,5 +93,4 @@ outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar%
 stopCluster(cl)
 
 outputCompiled <- merge(outputCompiled, fireZoneArea)
-summary(outputCompiled)
 save(outputCompiled, file = "outputCompiled.RData")

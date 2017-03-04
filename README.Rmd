@@ -79,14 +79,26 @@ Le modèle de feu est basé sur l'expérience de simulation décrite dans [Cyr _
 
 Le modèle de feu a pour objectif de générer de manière stochastique et spatialement explicite autant de séries d'événements de feux que souhaité dans un paysage donné. Ce paysage peut être formé uniquement de pixels "inflammables" ou d'une combinaison de pixels inflammables et de pixels ne pouvant pas brûler (ex. cours d'eau).
 
+### Paramètres des régimes de feux
+
 Afin de générer des séries d'événements de feu réalistes, les paramètres suivants du régime des feux doivent être spécifiés:
 
-* Le risque moyen (ou la durée du cycle des feux)
+* Le risque moyen $\lambda$ (ou la durée du cycle des feux)
 * La distribution de taille de feux
 
-Le régime de feu peut également être spatialement hétérogène. Dans le cas présent, les cycles de feux sont tirés de [Gauthier et al. 2015][8]. Il est à noter que les régimes de feux réalisés dans chacune des zones ne dépendront pas seulement des cibles, mais seront aussi influencées par les régimes de feux simulés dans par les zones avoisinantes; les frontières n'étant pas imperméables à la propagation des feux d'une zone à l'autre.
+Fait à noter que ces paramètres peuvent varier au cours d'une même simulation, pour tenir compte des changements climatiques ou d'un effet de la suppression des feux, par exemple. Dans le cas présent, seul un scénario de changements climatique a été simulé. (Voir [dispositif expérimental][9].)
 
-Le coeur du modèle est un [automate cellulaire][4] de propagation stochastique aux cellules avoisinantes, c'est-à-dire que les cellules "allumées" ont une probabilité pré-déterminée de propager le feu aux cellules avoisinantes jusqu'à l'atteinte d'une superficie totale elle aussi pré-déterminée.
+Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{S}$ (dérivée de la distribution de tailles), la taille du territoire à l'étude $A$ et la durée de la simulation $T$ sont ainsi définis *a priori*, il devient possible de déterminer le nombre de feux à simuler à chaque pas de temps $\bar{N}$ en l'isolant de l'équation suivante:
+
+$$Cycle=\frac{T \cdot A} {\bar{S} \cdot \bar{N}}$$
+
+Tel qu'actuellement simulé, le nombre "d'allumages" est une variable aléatoire résultant de tirage d'un distribution de Poisson de moyenne $\bar{N}$.
+
+### Patron spatiaux
+
+Le régime de feu peut également être spatialement hétérogène à l'échelle du paysage. Dans le cas présent, les cycles de feux sont tirés de [Gauthier et al. 2015][8]. Il est à noter que les régimes de feux réalisés dans chacune des zones ne dépendront pas seulement des cibles, mais seront aussi influencées par les régimes de feux simulés dans par les zones avoisinantes; les frontières n'étant pas imperméables à la propagation des feux d'une zone à l'autre.
+
+À l'échelle individuelle, les feux sont le produit d'un [automate cellulaire][4] de propagation stochastique aux cellules avoisinantes, c'est-à-dire que les cellules "allumées" ont une probabilité pré-déterminée de propager le feu aux cellules avoisinantes jusqu'à l'atteinte d'une superficie totale elle aussi pré-déterminée.
 
 Tel qu'actuellement configuré, le modèle de propagation épargne entre 5% et 15% des pixels éligibles lors de feux de grandes superficies. Il s'agit de proportions comparables aux observations faites par imagerie satellitaire [Madoui _et al_. (2010)][3] dans un territoire similaire.
 
@@ -123,6 +135,33 @@ De plus, la variabilité simulée sera plus grande lorsque la zone est petite pa
 
 -------------
 
+
+## Dispositif expérimental
+
+L'ensemble de simulations est le produit d'un disposif factoriel à deux facteurs comportant deux scénarios de changements climatiques, et deux traitements de récoltes, produisant ainsi un total de quatre combinaisons.
+
+* Feux (baseline) sans récolte  
+* Feux (baseline) avec récolte  
+* Feux (RCP 8.5) sans récolte  
+* Feux (RCP 8.5) avec récolte
+
+Le régime de feu *baseline* est issu de [Gauthier et al. 2015][8], et correspond à celui qui est illustré à la figure précédente, tandis que le régime de feu RCP 8.5 est tiré de [Boulanger et al. 2014][10].
+
+
+[insérer ici les taux/cycles tirés de Boulanger et al]
+
+Pour chacune des combinaisons, 1000 simulations d'une durée de 50 ans sont effectuées.
+
+Dans le cas du traitement avec récolte, un taux de récolte, calculé à partir des récoltes effectuées de 2002 à 2011 dans le territoire à l'étude, est appliqué de manière homogène sur tous les types de couverts considérés comme productifs. Les peuplements élligibles à la récolte sont ceux d'un âge supérieur ou égal à un seuil prédéterminé.
+
+[insérer tableau "types de couverts et âge min pour la récolte"]
+
+
+-------------
+
+
+
+
 ## Pour plus d'information
 
 N'hésitez pas à nous contacter!
@@ -140,3 +179,5 @@ N'hésitez pas à nous contacter!
 [6]: https://scf.rncan.gc.ca/employes/vue/sgauthie
 [7]: http://www.cef-cfr.ca/index.php?n=Membres.TadeuszSplawinski
 [8]: http://www.nrcresearchpress.com/doi/10.1139/cjfr-2014-0125#.WEHWNnUrLRY
+[9]: https://github.com/dcyr/risqueAccidentRegen#dispositif-expérimental
+[10]: http://www.nrcresearchpress.com/doi/abs/10.1139/cjfr-2013-0372

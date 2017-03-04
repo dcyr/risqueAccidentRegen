@@ -1,26 +1,19 @@
-################################################################################
-################################################################################
-####
-#### A simple cellular automaton to simulate fire spread
-#### Dominic Cyr
-####
-################################################################################
-################################################################################
-
-fireSpread <- function(eligible, w = NULL,
-                       fireSize, fireZones,
-                       probSpread =  0.32, maxTry = 10) {
-
+harvestFnc <- function(tsd, harvestZones, harvestPrescription) {
+   
     require(raster)
-    scaleFactor <- prod(res(eligible) / 100) # convert pixels into hectares
-
+    harvestPrescription <- harvestPrescription[!is.na(harvestPrescription$ID)]
+    
+    harvestZones
+    
+    
+    
     ##default propagation kernel ("queen's case")
     if(is.null(w))  {
         w <- matrix(1, nrow = 3, ncol = 3)
     }
-
+    
     f <- eligible-1
-
+    
     fArea <- list()
     ### looping through individual fires
     # first, shuffling fires
@@ -64,7 +57,7 @@ fireSpread <- function(eligible, w = NULL,
                         print(paste("Could not reach final target size after", maxTry, "ignitions. Jumping to next fire event"))
                         break
                     }
-                    print("Fire got extinguished before reaching its target size, igniting additional cell")
+                    print("Fire got extinguished before reaching its target size, igniting additional pixel")
                     ### igniting another fire 
                     potentialIgnitionSite <- which(values(eligible)>0 &
                                                        values(fireZones) == fireSize[i,1] &
@@ -75,13 +68,13 @@ fireSpread <- function(eligible, w = NULL,
                     }
                     ignition <- sample(potentialIgnitionSite, 1)
                     indices <- ignition
-
+                    
                     nIgnit <- nIgnit + 1
                 } else {### fire reaches its target size
                     break  
                 }
             }
-
+            
             f[indices] <- 1
             # resetting fire front
             fireFront[] <- 0
@@ -100,6 +93,6 @@ fireSpread <- function(eligible, w = NULL,
         eligible[f>0] <- 0
         f[] <- 0
     }
-    return(stack(fArea))
+    return(stack(hArea))
+    
 }
-

@@ -1,6 +1,6 @@
 ####################################################################
 ####################################################################
-###### Simulation function
+###### Fire model
 ######
 ###### Runs one simulation based of inputs provided upstream
 ###### Outputs TSF maps and/or individual fire map
@@ -9,21 +9,31 @@
 ####################################################################
 ####################################################################
 
-sim <- function(tsfInit, simDuration, fireZones, fireRegimeAttrib, fireSizeFit,
+
+simFire <- function(tsfInit, simDuration, yearInit,
+                fireZones, fireRegime, fireSizeFit,
                 outputTSF = TRUE, outputFire = FALSE) {
-    zones <- fireRegimeAttrib$ID
-    zoneNames <- as.character(fireRegimeAttrib$Zone_LN)
-    fireCycle <- fireRegimeAttrib$Fire_Cycle
-    ### reordering fire Size distrib parameters 
-    fireSizeFit <- fireSizeFit[match(zoneNames, names(fireSizeFit))]
-    
     
     require(raster)
-    source("../scripts/fireSpreadFnc.R")
-
     #### converting number of pixels to hectares
-    scaleFactor <- prod(res(initialLandscape))/10000
-
+    scaleFactor <- prod(res(tsfInit))/10000
+    
+    
+    source("../scripts/fireSpreadFnc.R")
+    
+    ## fire regime parameters
+    zones <- fireRegime$ID
+    zoneNames <- as.character(fireRegime$Zone_LN)
+    zoneNames <- zoneNames[zoneNames != "total"]
+    
+    fireCycle <- fireRegime[fireRegime$Zone_LN %in% zoneNames, "fireCycle"]
+    fireRegime[which(fireRegime$simYear < 1), "simYear"] <- 1
+    ## Removing unnecessary periods
+    fireRegimeSim <- fireRegime[which(fireRegime$simYear <= simDuration),]
+    
+    ### reordering fire Size distrib parameters if necessary
+    fireSizeFit <- fireSizeFit[match(zoneNames, names(fireSizeFit))]
+    
     ##############################################################
     ##############################################################
     ####  fire regime
@@ -34,15 +44,14 @@ sim <- function(tsfInit, simDuration, fireZones, fireRegimeAttrib, fireSizeFit,
     ### average fraction of the "burnable" area burned annually
     fAAB <- 1 / fireCycle
     
-    
     fireSizeMean <- numeric()
     for (i in zoneNames) {
-        if (i == fireRegimeAttrib[1,"Zone_LN"]) {
+        if (i == fireRegimeSim[1,"Zone_LN"]) {
             estimates <- names(fireSizeFit[[i]]$estimate)
         }
         if (estimates[1] == "rate") {
             distribType <- "exp"
-            fireSizeMean <- append(fireSizeMean, 1000)#append(fireSizeMean, 1/fireSizeFit[[i]]$estimate["rate"])
+            fireSizeMean <- append(fireSizeMean, 1/fireSizeFit[[i]]$estimate["rate"])
         }
         if (estimates[1] == "meanlog" & estimates[2] == "sdlog") {
             distribType <- "lognorm"
@@ -55,14 +64,26 @@ sim <- function(tsfInit, simDuration, fireZones, fireRegimeAttrib, fireSizeFit,
     ########
     ### Fire sequence (annually)
     nFiresMean <- fAAB * zonal(!is.na(fireZones), fireZones, fun='sum')[,"sum"] * scaleFactor / fireSizeMean
+    
+    
+    
     ### Generate a yearly sequence of number of fires
+    
     nFireSequence <- list()
-    for(i in seq_along(nFiresMean)) {
-        nFireSequence[[i]] <- rpois(lambda = nFiresMean[i], n = simDuration)
+    periodBegin <- unique(fireRegimeSim$simYear)
+    for (p in seq_along(periodBegin)) {
+        periodDuration <- min(c(periodBegin[p+1], simDuration+1), na.rm = T) - periodBegin[p]
+        nFiresTmp <- nFiresMean[which(fireRegimeSim$simYear==periodBegin[p])]
+        nFireSeqTmp <- list()
+        for(i in seq_along(nFiresTmp)) {
+            nFireSeqTmp[[i]] <- rpois(lambda = nFiresTmp[i], n = periodDuration)
+        }
+        # put that in a matrix where each column corresponds to one fire zone
+        nFireSequence[[p]] <- do.call("cbind", nFireSeqTmp)
+        colnames(nFireSequence[[p]]) <- unique(zoneNames)  
     }
-    # put that in a matrix where each column corresponds to one fire zone
-    nFireSequence <- do.call("cbind", nFireSequence)
-    colnames(nFireSequence) <- zoneNames
+    nFireSequence <- do.call("rbind", nFireSequence)
+    
     ##############################################################
     ##############################################################
     ##### aging and burning
@@ -75,12 +96,13 @@ sim <- function(tsfInit, simDuration, fireZones, fireRegimeAttrib, fireSizeFit,
         t1 <- Sys.time()
         #### aging landscape
         if (y == 1) {
-            tsf <- tsfInit
+            tsf <-  tsfInit ##
             timeSinceFire <- list()
         } else {
             tsf <- tsf + 1
         }
         
+        ### simulating fires
         nFires <- nFireSequence[y,]
         if (sum(nFires) > 0) { #### skip if no fire events during that year
             
@@ -128,10 +150,12 @@ sim <- function(tsfInit, simDuration, fireZones, fireRegimeAttrib, fireSizeFit,
             eligible <- tsf > 0     
         
         }
-
         timeSinceFire[[y]] <- tsf
-        t2 <- Sys.time()
         print(paste0("year ", y, " ; ", sum(nFires), " fire(s) ; total ", sum(fSize), " ha"))
+        
+        
+        t2 <- Sys.time()
+        
         print(round(t2-t1, 2))
     }
     

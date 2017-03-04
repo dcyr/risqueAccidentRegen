@@ -28,9 +28,19 @@ require(raster)
 fireZones <- raster("../data/fireZones.tif")
 studyArea <- raster("../data/studyArea.tif")
 fireRegimeAttrib <- read.csv("../data/fireZones.csv")
-# temporary initial tsf
-tsfInit <- fireZones
+# temporary initial "time since disturbance (assumed to be stand replacing)
+tsdInit <- fireZones
 
+
+### harvesting parameters (to be updated)
+harvestZones <- fireZones
+harvestZones[is.na(studyArea)] <- NA
+coverTypes <- get(load("../data/coverTypesTmp.RData"))
+head(foo) <- get(load("../data/coverTypesTmp.RData"))
+## temporary harvestPrescriptions
+harvestPrescription <- data.frame(fireRegimeAttrib, harvestTargetFraction = runif(nrow(fireRegimeAttrib), min = 0.005, max = 0.02))
+harvestPrescription <- harvestPrescription[harvestPrescription$ID %in% unique(values(harvestZones)) &
+                                               !is.na(harvestPrescription$ID),]
 
 ####################################################################
 ####################################################################
@@ -60,13 +70,13 @@ for (i in unique(as.character(fireObs$zone))) {
 source("../scripts/simFnc.R")
 ####################################################################################################
 ####################################################################################################
-nRep <- 999
-simDuration <- 50
+nRep <- 2
+simDuration <- 10
 
 ### temporary
 initialLandscape <- fireZones
 n <- sum(values(!is.na(fireZones)))
-tsfInit[!is.na(fireZones)] <- 100
+tsdInit[!is.na(fireZones)] <- 100
 #tsfInit[!is.na(fireZones)] <- round(rexp(n, 1/50))
 #corr <- 0
 require(doSNOW)
@@ -82,10 +92,12 @@ t1 <- Sys.time()
 foreach(i = 1:nrep) %dopar%  {
     require(stringr)
     print(paste("simulating replicate", i))
-    output <- sim(tsfInit, simDuration,
+    output <- sim(tsdInit, simDuration,
                   fireZones,
                   fireRegimeAttrib,
-                  fireSizeFit)
+                  fireSizeFit,
+                  harvestZones,
+                  harvestPrescription)
     
     fName <- paste0(getwd(), "/simOutput_", str_pad(i, nchar(nRep), pad = "0"), ".RData")
     print("##############################################################")
