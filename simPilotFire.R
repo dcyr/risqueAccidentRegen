@@ -65,13 +65,13 @@ yearInit <- 2015
 
 require(doSNOW)
 require(parallel)
-clusterN <-  max(1, floor(0.9*detectCores()))  ### choose number of nodes to add to cluster.
+clusterN <-  max(1, floor(0.98*detectCores()))  ### choose number of nodes to add to cluster.
 # #######
 
 
 ##
 t1 <- Sys.time()
-for (s in levels(fireZoneTable$scenario)) {
+for (s in "RCP85") {#levels(fireZoneTable$scenario)) {
     ### prepare scenario specific inputs
     
     fireRegime <- filter(fireZoneTable, scenario == s)
@@ -91,7 +91,7 @@ for (s in levels(fireZoneTable$scenario)) {
     cl = makeCluster(clusterN, outfile = "") ## 
     registerDoSNOW(cl)
     
-    foreach(i = 0:(nRep-1)) %dopar%  {
+    foreach(i = 954:(nRep-1)) %dopar%  {
         require(stringr)
         print(paste("simulating replicate", i))
         output <- simFire(tsfInit, simDuration, yearInit,

@@ -68,7 +68,7 @@ simFire <- function(tsfInit, simDuration, yearInit,
     
     
     ### Generate a yearly sequence of number of fires
-    
+
     nFireSequence <- list()
     periodBegin <- unique(fireRegimeSim$simYear)
     for (p in seq_along(periodBegin)) {

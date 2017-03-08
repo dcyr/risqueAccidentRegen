@@ -18,120 +18,87 @@ require(dplyr)
 require(doSNOW)
 require(parallel)
 require(foreach)
-clusterN <-  max(1, floor(0.9*detectCores()))  ### choose number of nodes to add to cluster.
-# #######
-
-#source("../scripts/gdal_polygonizeR.R")
-#################
-
-# ### loading shapefiles
-# forestInventory <- readOGR(dsn = "../gis", layer = "forestInventory")
-#
-# ### loading study area
-# studyArea <- raster("../data/studyArea.tif")
-# # new extent (crop outside study area)
-# tmp <- rasterToPoints(studyArea)
-# studyArea <- crop(studyArea, extent(c(range(tmp[,"x"]),range(tmp[,"y"]))))
-#
-# # defining projection (Quebec Lambert NAD93), and reprojecting for study area
-# proj4string(forestInventory) <- CRS("+init=epsg:32198")
-# forestInventory <- spTransform(forestInventory, CRSobj = crs(studyArea))
-#
-# ### cover type
-# coverTypes <- rasterize(forestInventory, studyArea, field = "Code_Poly")
-# # attaching levels description
-# coverTypes <- ratify(coverTypes)
-# rat <- levels(coverTypes)[[1]]
-# rat[,"descrip"] <- levels(forestInventory$Code_Poly)[rat$ID]
-# levels(coverTypes) <- rat
-# coverTypes[is.na(studyArea)] <- NA
-# coverTypes <- rasterToPoints(coverTypes)
-# colnames(coverTypes)[3] <- "ID"
-# coverTypes <- merge(coverTypes, rat)
-# save(coverTypes, file = "coverTypesTmp.RData")
-# ### initial TSF  ### temporary initial tsf
-# tsfInit <- rasterize(forestInventory, studyArea, field = "Stand_Age")
-# tsfInit[is.na(studyArea)] <- NA
-# tsfInit[tsfInit == 999] <- NA
-# tsfInit <- rasterToPoints(tsfInit)
-# colnames(tsfInit)[3] <- "tsfInit"
-# save(tsfInit, file = "tsfInitTmp.RData")
 
 
+########################################
+########################################
+coverTypes <- get(load("../data/coverTypesDf.RData"))
+tsfInit <- get(load("../data/tsfInitDf.RData"))
+colnames(tsfInit)[3] <- "tsfInit"
+##
+fireZones <- raster("../data/fireZones.tif")
+fireZones <- rasterToPoints(fireZones)
+##
+df <- merge(coverTypes, tsfInit)
+df <- merge(df, fireZones)
 
-# ########################################
-# ########################################
-# coverTypes <- get(load("../data/coverTypesTmp.RData"))
-# tsfInit <- get(load("../data/tsfInitTmp.RData"))
-# 
-# fireZones <- raster("../data/fireZones.tif")
-# fireZones <- rasterToPoints(fireZones)
-# 
-# df <- merge(coverTypes, tsfInit)
-# df <- merge(df, fireZones)
-# 
-# # df <- df %>%
-# #    filter(descrip %in% c("EN", "PG"))
-# df[, "cover"] <- NA
-# index <- which(df$descrip %in% c("R", "Improductif", "INO", "Non_Forestiere", "EAU"))
-# df[index, "cover"] <- "autres"
-# index <- which(df$descrip %in% c("EN", "F", "PG"))
-# df[index, "cover"] <- df[index, "descrip"]
-# outputDir <- "../outputs"
-# outputs <- list.files(outputDir)
-# 
-# cl = makeCluster(clusterN, outfile = "") ##
-# registerDoSNOW(cl)
-# outputCompiled <- foreach(i = seq_along(outputs), .combine = "rbind") %dopar%  { # .combine = "rbind") { %do% {
-#     require(reshape2)
-#     require(data.table)
-#     require(stringr)
-#     require(foreach)
-#     require(raster)
-#     output <- get(load(paste(outputDir, outputs[i], sep = "/")))
-#     simID <- gsub("[^0-9]", "", outputs[i])
-#     tsf <- crop(output$tsf, c(range(df$x),
-#                               range(df$y)))
-# 
-#     x <- rasterToPoints(tsf)
-# 
-#     x <- merge(df, x, all = F)
-#     tsf <- x[,grep("Y", colnames(x))]
-# 
-#     timestep <- as.numeric(gsub("Y", "", colnames(tsf)))
-# 
-# 
-#     x <- foreach(j = seq_along(timestep), .combine = "rbind") %do% {
-#         ts <- timestep[j]
-#         index <- which(tsf[,j] > ts - 1)
-#         tsf[index,j] <- df[index,"tsfInit"] + timestep[j] - 1
-#         ## focussing on fire pixels to identify regen failures
-#         index <- which(tsf[,j]==0)
-#         cover <- df[index, "cover"]
-#         fireZone <- df[index, "fireZones"]
-#         if (j == 1) {
-#             tsfPrefire <- df[index, "tsfInit"]
-#         } else {
-#             tsfPrefire <- tsf[index, j-1]
-#         }
-#         dfTmp <- data.frame(tsfPrefire, cover, fireZone)
-#         if (nrow(dfTmp) > 0) {
-#             dfTmp["timestep"] <- ts
-#             dfTmp["simID"] <- simID
-#             return(dfTmp)
-#         }
-# 
-#     }
-#     return(x)
-# }
-# stopCluster(cl)
-# save(outputCompiled, file = "outputCompiledFull.RData")
+########################################
+########################################
+outputDir <- "../outputs"
+outputs <- list.files(outputDir)
+outputs <- outputs[grep(".RData", outputs)]
+simInfo <- gsub(".RData", "", outputs)
+simInfo <- strsplit(simInfo, "_")
+scenario <- as.character(lapply(simInfo, function(x) x[[2]]))
+replicates <- as.numeric(lapply(simInfo, function(x) x[3]))
+
+clusterN <-  max(1, floor(0.95*detectCores()))  ### choose number of nodes to add to cluster.
+
+cl = makeCluster(clusterN, outfile = "") ##
+registerDoSNOW(cl)
+outputCompiled <- foreach(i = seq_along(outputs), .combine = "rbind") %dopar%  { # .combine = "rbind") { %do% {
+    require(reshape2)
+    require(data.table)
+    require(stringr)
+    require(foreach)
+    require(raster)
+    output <- get(load(paste(outputDir, outputs[i], sep = "/")))
+    simID <- gsub("[^0-9]", "", outputs[i])
+    s <- scenario[i]
+
+    tsf <- crop(output$tsf, c(range(df$x),
+                              range(df$y)))
+
+    x <- rasterToPoints(tsf)
+
+    x <- merge(df, x, all = F)
+    tsf <- x[,grep("Y", colnames(x))]
+
+    timestep <- as.numeric(gsub("Y", "", colnames(tsf)))
+
+
+    x <- foreach(j = seq_along(timestep), .combine = "rbind") %do% {
+        ts <- timestep[j]
+        # index <- which(tsf[,j] > ts - 1)
+        # tsf[index,j] <- df[index,"tsfInit"] + timestep[j] - 1
+        ## focussing on fire pixels to identify regen failures
+        index <- which(tsf[,j]==0)
+        cover <- df[index, "descrip"]
+        fireZone <- df[index, "fireZones"]
+        if (j == 1) {
+            tsfPrefire <- df[index, "tsfInit"]
+        } else {
+            tsfPrefire <- tsf[index, j-1]
+        }
+        dfTmp <- data.frame(tsfPrefire, cover, fireZone)
+        if (nrow(dfTmp) > 0) {
+            dfTmp["timestep"] <- ts
+            dfTmp["simID"] <- simID
+            dfTmp["scenario"] <- s
+            return(dfTmp)
+        }
+
+    }
+    return(x)
+}
+stopCluster(cl)
+save(outputCompiled, file = "outputCompiledFull.RData")
 
 
 
 
-#################################################################
-#################################################################
+########################################
+########################################
 ##### loading a few preformatted data frames
 coverTypes <- get(load("../data/coverTypesTmp.RData"))
 # renaming columns for uniformity
@@ -189,9 +156,8 @@ dfSummary[, "Zone_LN"] <- fireZoneNames[match(dfSummary$fireZone, fireZoneNames$
 write.csv(dfSummary, file = "dfSummary.csv", row.names = F)
 
 
-#####################################################################################
-#####################################################################################
-###########################################################
+########################################
+########################################
 #### computing results by cover type zone
 dfAreaCover <- dfArea %>%
     group_by(cover) %>%

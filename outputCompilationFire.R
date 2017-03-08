@@ -40,23 +40,22 @@ replicates <- as.numeric(lapply(simInfo, function(x) x[3]))
 ###########################################
 ###########################################
 
-
 require(doSNOW)
 require(parallel)
 require(foreach)
 # clusterN <- 2
 clusterN <-  max(1, floor(0.9*detectCores()))  ### choose number of nodes to add to cluster.
-# #######
+#######
 cl = makeCluster(clusterN, outfile = "") ##
 registerDoSNOW(cl)
-
-#fireCycle <- meanTSF <- year <- replicate <- areaBurned <- list()
-outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar% {#
+#######
+outputCompiled <- foreach(i = seq_along(x), .combine = "rbind") %dopar% {#
     require(raster)
     require(reshape2)
     require(dplyr)
-    s <- scenario[r]
-    output <- get(load(paste(outputFolder, x[r], sep="/")))
+    s <- scenario[i]
+    r <- replicates[i]
+    output <- get(load(paste(outputFolder, x[i], sep="/")))
     
     ##
     tsfStack <- output[["tsf"]]
@@ -74,8 +73,8 @@ outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar%
     colnames(meanTSF) <-  colnames(areaBurned) <- c(as.character(fireRegimeAttrib[match(zoneID, fireRegimeAttrib$ID), "Zone_LN"]),
                                                     "total")
 
-    meanTSF <- data.frame(year, replicate = replicates[r], meanTSF)
-    areaBurned <- data.frame(year, replicate = replicates[r], areaBurned)
+    meanTSF <- data.frame(year, replicate = r, meanTSF)
+    areaBurned <- data.frame(year, replicate = r, areaBurned)
 
 
     meanTSF <- melt(meanTSF, id.vars = c("year", "replicate"),
@@ -86,7 +85,7 @@ outputCompiled <- foreach(r = seq_along(replicates), .combine = "rbind") %dopar%
     out <- merge(meanTSF, areaBurned)
     out <- data.frame(scenario = s, out)
     out <- arrange(out, scenario, zone, year)
-    print(r)
+    print(paste(s, r))
     return(out)
 }
 

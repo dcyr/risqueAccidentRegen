@@ -3,7 +3,8 @@
 outputs
 *.html
 manuscript
-old
+*old
+*OLD
 *~
 gis/forestInventory*
 
