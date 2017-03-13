@@ -60,8 +60,6 @@ Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{
 
 <div style="text-align:center"><img src ="README_files/figure-html/cycle.gif" /></div>
 
-![](README_files/figure-html/cycle.gif)
-  
 
 Tel qu'actuellement simulé, le nombre "d'allumages" est une variable aléatoire résultant de tirage d'un distribution de Poisson de moyenne $\bar{N}$.
 
