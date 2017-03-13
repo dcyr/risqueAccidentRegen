@@ -58,6 +58,8 @@ Fait à noter que ces paramètres peuvent varier au cours d'une même simulation
 
 Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{S}$ (dérivée de la distribution de tailles), la taille du territoire à l'étude $A$ et la durée de la simulation $T$ sont ainsi définis *a priori*, il devient possible de déterminer le nombre de feux à simuler à chaque pas de temps $\bar{N}$ en l'isolant de l'équation suivante:
 
+<div style="text-align:center"><img src ="README_files/figure-html/cycle.gif" /></div>
+
 ![](README_files/figure-html/cycle.gif)
   
 
