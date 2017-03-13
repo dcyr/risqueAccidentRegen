@@ -1,7 +1,7 @@
 # Analyse de risque d'accident de régénération (en développement)
 Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier et Tadeusz Splawinski  
 
-Mis à jour le 28 Feb 2017
+Mis à jour le 13 Mar 2017
 
 
 -------
@@ -23,7 +23,7 @@ Un modèle de succès de régénération après feux, dépendant des conditions 
 
 ## Territoire à l'étude
 
-Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de 1.3 Mha, dont 10.1% est constitué de grands cours d'eau. 
+Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de 1.2 Mha, excluant les grands cours d'eau. 
 
 
 <img src="README_files/figure-html/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
@@ -58,7 +58,8 @@ Fait à noter que ces paramètres peuvent varier au cours d'une même simulation
 
 Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{S}$ (dérivée de la distribution de tailles), la taille du territoire à l'étude $A$ et la durée de la simulation $T$ sont ainsi définis *a priori*, il devient possible de déterminer le nombre de feux à simuler à chaque pas de temps $\bar{N}$ en l'isolant de l'équation suivante:
 
-$$Cycle=\frac{T \cdot A} {\bar{S} \cdot \bar{N}}$$
+![](README_files/figure-html/cycle.gif)
+  
 
 Tel qu'actuellement simulé, le nombre "d'allumages" est une variable aléatoire résultant de tirage d'un distribution de Poisson de moyenne $\bar{N}$.
 
@@ -98,7 +99,7 @@ Par contre, elles montrent que les plus petites portions du territoire à l'étu
 
 De plus, la variabilité simulée sera plus grande lorsque la zone est petite par rapport à la taille moyenne des feux, ainsi que lorsque le cycle ciblé est long par rapport à la durée de la simulation (ici 50 ans). Cela est cohérent avec les observations empiriques documentées ainsi qu'avec les expériences de simulation antérieures.
 
-![](figures/realizedFC.png)
+![](figures/realizedFC_baseline.png)
 
 
 -------------
@@ -115,9 +116,12 @@ L'ensemble de simulations est le produit d'un disposif factoriel à deux facteur
 
 Le régime de feu *baseline* est issu de [Gauthier et al. 2015][8], et correspond à celui qui est illustré à la figure précédente, tandis que le régime de feu RCP 8.5 est tiré de [Boulanger et al. 2014][10].
 
+
 [insérer ici les taux/cycles tirés de Boulanger et al]
 
-Dans le cas du traitement avec récolte, un taux homogène, calculé à partir des récoltes effectuées de 2002 à 2011, est appliqué de manière homogène sur tous les types de couverts considérés comme productifs. Les peuplements élligibles à la récolte étaient ceux d'un âge supérieur ou égal à un seuil prédéterminé.
+Pour chacune des combinaisons, 1000 simulations d'une durée de 50 ans sont effectuées.
+
+Dans le cas du traitement avec récolte, un taux de récolte, calculé à partir des récoltes effectuées de 2002 à 2011 dans le territoire à l'étude, est appliqué de manière homogène sur tous les types de couverts considérés comme productifs. Les peuplements élligibles à la récolte sont ceux d'un âge supérieur ou égal à un seuil prédéterminé.
 
 [insérer tableau "types de couverts et âge min pour la récolte"]
 

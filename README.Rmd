@@ -16,6 +16,7 @@ Mis à jour le `r format(Sys.time(), "%d %b %Y")`
 -------
 
 ```{r, echo=FALSE, include=FALSE}
+
 require(raster)
 #require(rgeos)
 require(rgdal)
@@ -23,16 +24,26 @@ setwd("~/Travail/SCF/regenFailureRiskAssessment/")
 studyArea <- raster("./data/studyArea.tif")
 convFactor <- prod(res(studyArea))/10000
 fireZones <- raster("./data/fireZones.tif")
+fireZones[is.na(studyArea)] <- NA
 
-studyAreaP <- get(load("./data/studyAreaP.RData"))
-studyAreaTotal <- rasterize(studyAreaP, studyArea)
-studyAreaTotal[!is.na(studyAreaTotal)] <- 1
-studyAreaTotal <- sum(values(studyAreaTotal), na.rm = T) *convFactor
-flammableProp <- sum(values(studyArea), na.rm = T) *convFactor /studyAreaTotal
-fireRegimeAttrib <- read.csv("./data/fireZones.csv")
-cycleGlobal <- fireRegimeAttrib[which(fireRegimeAttrib$Zone_LN == "total"), 2]
-##
-### to convert to hectares
+fireZoneArea <- zonal(!is.na(fireZones), fireZones, sum)
+fireRegimeAttrib <- read.csv("./data/fireZoneTable.csv")
+
+fireZoneArea <- data.frame(zone = as.character(fireRegimeAttrib[match(fireZoneArea[,1], fireRegimeAttrib$ID),"Zone_LN"]),
+                           areaZone_ha = fireZoneArea[,2] * convFactor)
+totalArea <- sum(fireZoneArea$areaZone_ha)
+fireZoneArea <- rbind(fireZoneArea, data.frame(zone = "total", areaZone_ha = totalArea))
+fireZoneArea[, "prop"] <- fireZoneArea$areaZone_ha/fireZoneArea[which(fireZoneArea$zone == "total"),"areaZone_ha"]
+
+require(dplyr)
+### computing global fire regime attributes (per period)
+cycleGlobal <- fireRegimeAttrib %>%
+    filter(scenario == "baseline" & period == "2011-2040") %>%
+    mutate(propAAB = 1/fireCycle) %>%
+    merge(fireZoneArea, by.x = "Zone_LN", by.y = "zone") %>%
+    mutate(weightedAAB = propAAB * prop) %>%
+    summarise(fireCycle = round(1/sum(weightedAAB)))
+
 ```
 
 ## Contexte
@@ -50,7 +61,7 @@ Un modèle de succès de régénération après feux, dépendant des conditions 
 
 ## Territoire à l'étude
 
-Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de `r round(studyAreaTotal/1000000, 1)` Mha, dont `r 100 -round(flammableProp*100, 1)`% est constitué de grands cours d'eau. 
+Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de `r round(totalArea/1000000, 1)` Mha, excluant les grands cours d'eau. 
 
 
 ```{r fig.height = 6, fig.align = "center", echo=FALSE}
@@ -90,7 +101,8 @@ Fait à noter que ces paramètres peuvent varier au cours d'une même simulation
 
 Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{S}$ (dérivée de la distribution de tailles), la taille du territoire à l'étude $A$ et la durée de la simulation $T$ sont ainsi définis *a priori*, il devient possible de déterminer le nombre de feux à simuler à chaque pas de temps $\bar{N}$ en l'isolant de l'équation suivante:
 
-$$Cycle=\frac{T \cdot A} {\bar{S} \cdot \bar{N}}$$
+![](README_files/figure-html/cycle.gif)
+  
 
 Tel qu'actuellement simulé, le nombre "d'allumages" est une variable aléatoire résultant de tirage d'un distribution de Poisson de moyenne $\bar{N}$.
 
@@ -130,7 +142,7 @@ Par contre, elles montrent que les plus petites portions du territoire à l'étu
 
 De plus, la variabilité simulée sera plus grande lorsque la zone est petite par rapport à la taille moyenne des feux, ainsi que lorsque le cycle ciblé est long par rapport à la durée de la simulation (ici 50 ans). Cela est cohérent avec les observations empiriques documentées ainsi qu'avec les expériences de simulation antérieures.
 
-![](figures/realizedFC.png)
+![](figures/realizedFC_baseline.png)
 
 
 -------------
