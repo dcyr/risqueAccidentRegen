@@ -99,9 +99,9 @@ Afin de générer des séries d'événements de feu réalistes, les paramètres 
 
 Fait à noter que ces paramètres peuvent varier au cours d'une même simulation, pour tenir compte des changements climatiques ou d'un effet de la suppression des feux, par exemple. Dans le cas présent, seul un scénario de changements climatique a été simulé. (Voir [dispositif expérimental][9].)
 
-Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{S}$ (dérivée de la distribution de tailles), la taille du territoire à l'étude $A$ et la durée de la simulation $T$ sont ainsi définis *a priori*, il devient possible de déterminer le nombre de feux à simuler à chaque pas de temps $\bar{N}$ en l'isolant de l'équation suivante:
+Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{S}$ (dérivée de la distribution de tailles), la taille du territoire à l'étude $A$ et la durée de la simulation _T_ sont ainsi définis *a priori*, il devient possible de déterminer le nombre de feux à simuler à chaque pas de temps $\bar{N}$ en l'isolant de l'équation suivante:
 
-<div style="text-align:center"><img src ="README_files/figure-html/cycle.gif" /></div>
+<div style="img-align:center"><img src ="README_files/figure-html/cycle.gif" /></div>
 
 
 Tel qu'actuellement simulé, le nombre "d'allumages" est une variable aléatoire résultant de tirage d'un distribution de Poisson de moyenne $\bar{N}$.
