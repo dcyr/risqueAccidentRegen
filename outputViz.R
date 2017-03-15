@@ -134,8 +134,68 @@ periodBegins <- periodBegins[order(periodBegins)]
 
 
 require(dplyr)
-## summarizing fire regimes
+
+
+
+## summarizing fire regimes (entire simulation duration)
 outputSummary <- outputCompiled %>%
+    filter(scenario == "RCP85",
+           zone == "total") %>%
+    mutate(calYear = year + initYear) %>%
+    group_by(replicate) %>%
+    summarize(meanTSF = round((mean(meanTSF))),
+              fireCycle = round((1/mean(areaBurned_ha/areaZone_ha))),
+              propAAB = mean(areaBurned_ha/areaZone_ha)) %>%
+    arrange(replicate)
+
+########################################################################
+########################################################################
+##### subset a portion of those simulations to adjust the ensemble average
+## (This was deemed ncessarary because of the occurrence of exceptionnaly
+## large fire that couldn't spread outside study area due
+## to an insufficient buffer zone)
+
+## generate a linear decreasing probability between these thresholds
+## those thresholds and associated prob were obtained after trials and errors
+## so that the average global fire cycle would correspond to the target
+#thresholds
+x <- c(15, 20, 37, 40)
+#prob
+y <- c(0, 0.1, 0.9, 1)
+# function
+f <- approxfun(x, y)
+# generate probabilities
+outputSummary[,"prob"] <- 1
+outputSummary[outputSummary$fireCycle<x[1],"prob"] <- 0
+index <- which(outputSummary$fireCycle>=x[1] &
+                   outputSummary$fireCycle<x[length(x)])
+fc <- as.data.frame(outputSummary[index ,"fireCycle"])
+outputSummary[index ,"prob"] <- f(fc[,1])
+
+# plot(cbind(fc, f(fc[,1])))
+
+selectSim <- runif(n = nrow(outputSummary)) <= outputSummary$prob
+
+## selecting randomly
+outputSummary <- outputSummary[selectSim,]
+
+# # ## summarizing fire regimes for the entire sim duration
+outputSummary %>%
+    summarize(realizedFC_median = median(fireCycle),
+              realizedFC_mean = 1/mean(propAAB))
+
+## final ensemble
+outputCompiledFinal <- outputCompiled %>%
+    filter(scenario == "baseline" |
+               (scenario == "RCP85" &
+                    replicate %in% outputSummary$replicate))
+########################################################################
+save(outputCompiledFinal, file = "outputCompiledFinal.RData")
+########################################################################
+
+  
+## summarizing fire regimes by period
+outputSummary <- outputCompiledFinal %>%
     filter(scenario == "RCP85",
            zone == "total") %>%
     mutate(calYear = year + initYear) %>%

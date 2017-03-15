@@ -135,7 +135,19 @@ preFireConditions <- get(load("../compiledOutputs/outputCompiledPreFireCondition
 ### plot median tsd prefire, and tsf prefire
 #################
 
-
+################################################################################
+### Subsetting 
+outputCompiled <- get(load("../compiledOutputs/outputCompiledFinalEnsemble.RData"))
+rcp85Rep <- filter(outputCompiled, scenario == "RCP85")[,"replicate"]
+rcp85Rep <- unique(rcp85Rep[order(rcp85Rep)])
+preFireBaseline <- filter(preFireConditions, scenario =="baseline")
+preFireRCP85 <- preFireConditions %>% 
+    filter(scenario =="RCP85") %>%
+    mutate(replicate = as.numeric(simID)) %>%
+    filter(replicate %in% rcp85Rep)
+###
+preFireConditions <- rbind(preFireBaseline, preFireRCP85[,colnames(preFireBaseline)])
+#################
 
 
 
@@ -296,11 +308,12 @@ p <- c(p.050 = "5%", p.500 = "médiane", p.950 = "95%")
 
 
 require(ggplot2)
-
 for (s in c("baseline", "RCP85")) {
     df <- dfCover %>%
         filter(scenario == s) %>%
         mutate(ID = as.numeric(as.factor(paste(scenario, treatment, simID))))
+    
+    nRep <- length(unique(df$simID))
     labels <- filter(labelDF, scenario == s)
     #labels$treatment <- factor(labels$treatment, levels = c("sans récolte", "avec récolte"))
     #df$treatment <- factor(df$treatment, levels = c("sans récolte", "avec récolte"))
@@ -476,6 +489,8 @@ for (s in c("baseline", "RCP85")) {
     df <- dfZone %>%
         filter(scenario == s) %>%
         mutate(ID = as.numeric(as.factor(paste(scenario, treatment, simID))))
+    nRep <- length(unique(df$simID))
+    
     labels <- filter(labelDF, scenario == s)
     
     
