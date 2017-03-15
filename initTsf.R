@@ -51,6 +51,9 @@ require(foreach)
 ########################################
 coverTypes <- get(load("../data/coverTypesDf.RData"))
 tsfInit <- get(load("../data/tsfInitDf.RData"))
+harvest <- raster("../data/harvest.tif")
+harvest <- rasterToPoints(harvest)
+
 ########################################
 
 fireZones <- raster("../data/fireZones.tif")
@@ -58,6 +61,7 @@ fireZones <- rasterToPoints(fireZones)
 fireZoneNames <- read.csv("../data/fireZoneTable.csv")
 
 df <- merge(coverTypes, tsfInit)
+df <- merge(df, harvest, all.y = F)
 df <- merge(df, fireZones)
 df[,"Zone_LN"] <- fireZoneNames[match(df$fireZones, fireZoneNames$ID) , "Zone_LN"]
 
@@ -68,8 +72,15 @@ index <- which(df$descrip %in% c( "Improductif", "INO", "Non_Forestiere", "EAU")
 df[index, "cover"] <- "autres"
 index <- which(df$descrip %in% c("EN", "F", "PG", "R"))
 df[index, "cover"] <- as.character(df[index, "descrip"])
-
-
+#
+harvestLevels <- c("1" = "Récoltes récentes", "0" = "Autres perturbations")
+df$harvest <- factor(harvestLevels[as.character(df$harvest)], levels = harvestLevels)
+#
+df[which(df$tsf>20), "harvest"] <- "Autres perturbations"
+# convert into age classes
+df[, "tsdClass"] <- cut(df$tsf, breaks = c(0, 10, 20, 40, 60, 80, 100, 999),
+                        labels = c("0-10", "11-20", "21-40", "41-60", "61-80", "81-100", "101 et +"),
+                        include.lowest = T)
 require(ggplot2)
 ### plotting parameters
 pWidth  <- 1400
@@ -85,7 +96,7 @@ p <- ggplot(data = df, aes_string("x", "y", fill = "tsf")) +
     theme_bw() +
     geom_raster() +
     coord_fixed() +
-    scale_fill_gradientn(name = c("Temps depuis le dernier feu initial\n(années)"), #limits = c(0,1),
+    scale_fill_gradientn(name = c("Temps depuis la dernière perturbation initiale\n(années)"), #limits = c(0,1),
                          colours = cols,
                          values = colValues/maxVal, limits = c(0,maxVal),
                          na.value = "dodgerblue1") +
@@ -94,7 +105,7 @@ p <- ggplot(data = df, aes_string("x", "y", fill = "tsf")) +
     theme(legend.position="top", legend.direction="horizontal")
    
     
-png(filename = "tsfInit.png",
+png(filename = "tsdInit.png",
     width = pWidth, height = pHeight, units = "px", res = 300, pointsize = pointsize,
     bg = "white")
 
@@ -112,59 +123,71 @@ dev.off()
 
 #### summarizing by area and fire zones
 require(dplyr)
-tsfInitSummary <- df %>%
-    group_by(cover, Zone_LN, tsf) %>%
+tsdInitSummary <- df %>%
+    group_by(cover, Zone_LN, tsdClass, harvest) %>%
     summarise(area_ha = n()*25) %>%
-    arrange(tsf, Zone_LN, cover)
+    arrange(tsdClass, Zone_LN, cover)
 
-write.csv(tsfInitSummary, file = "tsfInitSummary.csv", row.names = F)
+write.csv(tsdInitSummary, file = "tsdInitSummary.csv", row.names = F)
 
-tsfInitGlobal <- tsfInitSummary %>%
-    group_by(tsf)  %>%
+tsdInitGlobal <- tsdInitSummary %>%
+    group_by(tsdClass, harvest)  %>%
     summarize(area_ha = sum(area_ha)) %>%
     mutate(cover = "Global",
            Zone_LN = "Global")
 
 
 
-
-tsfInitSummary <- rbind(tsfInitSummary, tsfInitGlobal)
+tsdInitSummary <- rbind(tsdInitSummary, tsdInitGlobal)
 coverLevels <- c(EN = "Épinette", PG = "Pin gris", F = "Feuillu", R = "Résineux", autres = "autres", Global = "Global")
 
-tsfInitSummary$cover <- factor(coverLevels[tsfInitSummary$cover], levels = coverLevels)
+tsdInitSummary$cover <- factor(coverLevels[tsdInitSummary$cover], levels = coverLevels)
 
 
 #figure by fireZone
-png(filename="tsfDistribFireZones.png",
-    width = 10, height = 5, units = "in", res = 600, pointsize=10)
+png(filename="tsdDistribFireZones.png",
+    width = 8, height = 5, units = "in", res = 600, pointsize=10)
 
 
 options(scipen=999)
-ggplot(data = tsfInitSummary, aes(x = tsf, weight = area_ha)) +
-    geom_histogram(breaks = seq(from = 0, to = 150, by = 10)) +
+ggplot(data = tsdInitSummary, aes(x = tsdClass, weight = area_ha, group = harvest,
+                                  fill = harvest, stat="identity")) +
+    geom_bar() +
+    # geom_histogram(breaks = c(0, 10, seq(from = 20, to = 150, by = 20)),
+    #                closed = "right") +
+    scale_fill_manual("", values = c("Récoltes récentes" = "grey75",
+                                  "Autres perturbations" = "grey25")) +
     theme_dark() +
+    theme(legend.position="top", legend.direction="horizontal") +
     facet_wrap(~Zone_LN) +
     labs(title ="Structure d'âge",
-         subtitle = "Temps depuis le dernier feu - Préliminaire",
-                        x = "Temps depuis le dernier feu (années)",
-                        y = "Superficie totale (ha)")
+         subtitle = "Temps depuis la dernière perturbation (2015)",
+                        x = "Temps depuis la dernière perturbation (années)",
+                        y = "Superficie totale (ha)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 dev.off()
 
 
 #figure by cover
-png(filename="tsfDistribCover.png",
-    width = 10, height = 5, units = "in", res = 600, pointsize=10)
+png(filename="tsdDistribCover.png",
+    width = 8, height = 5, units = "in", res = 600, pointsize=10)
 
 
 options(scipen=999)
-ggplot(data = tsfInitSummary, aes(x = tsf, weight = area_ha)) +
-    geom_histogram(breaks = seq(from = 0, to = 150, by = 10)) +
+ggplot(data = tsdInitSummary, aes(x = tsdClass, weight = area_ha, group = harvest,
+                                  fill = harvest, stat="identity")) +
+    geom_bar() +
+    #geom_histogram(breaks = seq(from = 0, to = 150, by = 10)) +
+    scale_fill_manual("", values = c("Récoltes récentes" = "grey75",
+                                     "Autres perturbations" = "grey25")) +
     theme_dark() +
+    theme(legend.position="top", legend.direction="horizontal") +
     facet_wrap(~cover) +
     labs(title ="Structure d'âge",
-         subtitle = "Temps depuis le dernier feu - Préliminaire",
-         x = "Temps depuis le dernier feu (années)",
-         y = "Superficie totale (ha)")
+         subtitle = "Temps depuis la dernière perturbation (2015)",
+         x = "Temps depuis la dernière perturbation (années)",
+         y = "Superficie totale (ha)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 dev.off()

@@ -58,6 +58,8 @@ originYear[] <- as.numeric(an_origineLevels)[values(originYear)]
 summary(forestInventory$ORIGINE)
 harvestLevels <- which(origineLevels %in% c("CBA", "CPR", "CT", "P", "PRR", "REA"))
 harvest <- origine %in% harvestLevels
+harvest[is.na(studyArea)] <- NA
+writeRaster(harvest, file = "harvest.tif", overwrite = T)
 
 year <- 2000
 harvestProp <- harvest & originYear>=year
