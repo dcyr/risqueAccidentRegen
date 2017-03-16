@@ -274,7 +274,9 @@ dfCover <- dfCover %>%
 dfCoverPercentiles <- dfCover %>%
     group_by(scenario, treatment, timestep, cover) %>%
     summarise(p.050 = quantile(cumulpropBurned, 0.05, na.rm = T),
+              p.250 = quantile(cumulpropBurned, 0.25, na.rm = T),
               p.500 = quantile(cumulpropBurned, 0.5, na.rm = T),
+              p.750 = quantile(cumulpropBurned, 0.75, na.rm = T),
               p.950 = quantile(cumulpropBurned, 0.95, na.rm = T),
               cumulPropMean = mean(cumulpropBurned, na.rm = T),
               medianRate = median(meanRate))
@@ -287,7 +289,9 @@ for (ts in 1:50) {
         filter(timestep <= ts) %>%
         group_by(scenario, treatment, cover) %>%
         summarize(p.050 = max(p.050),
+                  p.250 = max(p.250),
                   p.500 = max(p.500),
+                  p.750 = max(p.750),
                   p.950 = max(p.950),
                   cumulPropMean = max(cumulPropMean),
                   medianRate = max(medianRate),
@@ -303,70 +307,95 @@ labelDF <- dfCoverPercentiles %>%
     filter(timestep == 50) %>%
     select(cover, treatment, timestep, medianRate)
 
-p <- c(p.050 = "5%", p.500 = "médiane", p.950 = "95%")
-
-
+p <- c(p.050 = "5%", p.250 = "25%", p.500 = "médiane", p.750 = "75%", p.950 = "95%")
+sName <- c(baseline = "Scénario de référence",
+           RCP85 = "Scénario RCP 8.5")
 
 require(ggplot2)
 for (s in c("baseline", "RCP85")) {
-    df <- dfCover %>%
-        filter(scenario == s) %>%
-        mutate(ID = as.numeric(as.factor(paste(scenario, treatment, simID))))
     
-    nRep <- length(unique(df$simID))
-    labels <- filter(labelDF, scenario == s)
-    #labels$treatment <- factor(labels$treatment, levels = c("sans récolte", "avec récolte"))
-    #df$treatment <- factor(df$treatment, levels = c("sans récolte", "avec récolte"))
+    for (i in c("all", "Global")) {
+        if (i == "all") {
+            df <- dfCover %>%
+                filter(scenario == s) %>%
+                mutate(ID = as.numeric(as.factor(paste(scenario, treatment, simID))))
+            labels <- labelDF %>%
+                filter(scenario == s) 
+            fName <- paste0("immatureBurnsCover_", s, ".png")
+            figHeight <- 8
+        }
+        if (i == "Global") {
+            df <- dfCover %>%
+                filter(scenario == s,
+                       cover == i) %>%
+                mutate(ID = as.numeric(as.factor(paste(scenario, treatment, simID))))
+            labels <- labelDF %>%
+                filter(scenario == s,
+                       cover == i)  
+            fName <- paste0("immatureBurnsGlobal_", s, ".png")
+            figHeight <- 4
+        }
     
-    #options(scipen=999)
-    m <- ggplot(df, aes(x=timestep + 2015, y = cumulpropBurned, group = ID)) +
-        geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
-        geom_line(aes_string(y = names(p)[2], group = 1),
-                  colour = "lightblue",
-                  linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
-        geom_line(aes_string(y = names(p)[3], group = 1),
-                  colour = "yellow",
-                  linetype = 4, size = 0.5, alpha = 1) +
-        geom_line(aes_string(y = names(p)[1], group = 1),
-                  colour = "yellow",
-                  linetype = 4, size = 0.5, alpha = 1) +
-        facet_grid(cover~treatment) +
-        theme_dark() #+
-        # geom_smooth(span = 0.7, aes_string(y = names(p)[2], group = 1),
-        #             colour="lightblue", linetype = 1, size = 0.7, alpha = 1) +
-        # geom_smooth(span = 0.2, aes_string(y = names(p)[1], group = 1),
-        #             colour = "yellow",
-        #             linetype = 4, size = 0.5, alpha = 1) +
-        # geom_smooth(span = 0.2, aes_string(y = names(p)[3], group = 1),
-        #             colour = "yellow",
-        #             linetype = 4, size = 0.5, alpha = 1) 
+        nRep <- length(unique(df$simID))
+        #labels$treatment <- factor(labels$treatment, levels = c("sans récolte", "avec récolte"))
+        #df$treatment <- factor(df$treatment, levels = c("sans récolte", "avec récolte"))
+        
+        #options(scipen=999)
+        m <- ggplot(df, aes(x=timestep + 2015, y = cumulpropBurned, group = ID)) +
+            geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
+            geom_line(aes_string(y = names(p)[3], group = 1),
+                      colour = "lightblue",
+                      linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
+            geom_line(aes_string(y = names(p)[1], group = 1),
+                      colour = "yellow",
+                      linetype = 3, size = 0.3, alpha = 1) +
+            geom_line(aes_string(y = names(p)[5], group = 1),
+                      colour = "yellow",
+                      linetype = 3, size = 0.3, alpha = 1) +
+            geom_line(aes_string(y = names(p)[2], group = 1),
+                      colour = "yellow",
+                      linetype = 4, size = 0.4, alpha = 1) +
+            geom_line(aes_string(y = names(p)[4], group = 1),
+                      colour = "yellow",
+                      linetype = 4, size = 0.4, alpha = 1) +
+            facet_grid(cover~treatment) +
+            theme_dark() #+
+            # geom_smooth(span = 0.7, aes_string(y = names(p)[2], group = 1),
+            #             colour="lightblue", linetype = 1, size = 0.7, alpha = 1) +
+            # geom_smooth(span = 0.2, aes_string(y = names(p)[1], group = 1),
+            #             colour = "yellow",
+            #             linetype = 4, size = 0.5, alpha = 1) +
+            # geom_smooth(span = 0.2, aes_string(y = names(p)[3], group = 1),
+            #             colour = "yellow",
+            #             linetype = 4, size = 0.5, alpha = 1) 
+        
+        yMax <- layer_scales(m)$y$range$range[2]
+        xMin <- layer_scales(m)$x$range$range[1]
+        
+        png(filename = fName,
+            width = 7.5, height = figHeight, units = "in", res = 600, pointsize=8)
+        
+        
+        print(m + theme_dark() +
+                  theme(legend.position="top", legend.direction="horizontal",
+                        axis.text.x = element_text(angle = 45, hjust = 1),
+                        strip.text.y = element_text(size = 8))+
+                  labs(title = paste0("Proportion cumulative du territoire productif où une forêt immature a brûlé\n",
+                                      sName[s]),
+                       subtitle = paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
+                                         p[1], ", ", p[2], ", ", p[4], " et ", p[5],
+                                         ",\nsur un total de ", nRep, " réalisations."),
+                       caption = paste0("Maturité épinette: ", maturity["EN"], " ans; ",
+                                        "Maturité pin gris: ",maturity["PG"], " ans; Taux de récolte annuel de 0.51%"),
+                       x = "",
+                       y = "Proportion cumulée")  +
+                  geom_text(aes(x = xMin, y = yMax, group = NULL,
+                                label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
+                            data = labels,
+                            hjust = 0, size = 3, fontface = 1))
     
-    yMax <- layer_scales(m)$y$range$range[2]
-    xMin <- layer_scales(m)$x$range$range[1]
-    
-    png(filename= paste0("immatureBurnsCover_", s, ".png"),
-        width = 7.5, height = 8, units = "in", res = 600, pointsize=8)
-    
-    
-    print(m + theme_dark() +
-              theme(legend.position="top", legend.direction="horizontal",
-                    axis.text.x = element_text(angle = 45, hjust = 1),
-                    strip.text.y = element_text(size = 8))+
-              labs(title ="Proportion cumulative du territoire productif où une forêt immature a brûlé",
-                   subtitle = paste0("En bleu sont illustrées les médianes et en jaune les percentiles ", p[1], " et ", p[3],
-                                     ", sur un total de ", nRep, " réalisations."),
-                   caption = paste0("Maturité épinette: ", maturity["EN"], " ans; ",
-                                    "Maturité pin gris: ",maturity["PG"], " ans; Taux de récolte annuel de 0.51%"),
-                   x = "",
-                   y = "Proportion cumulée")  +
-              geom_text(aes(x = xMin, y = yMax, group = NULL,
-                            label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
-                        data = labels,
-                        hjust = 0, size = 3, fontface = 1))
-
-    dev.off()
-    
-    
+        dev.off()
+    }
 }
 
 
@@ -431,7 +460,9 @@ dfZone <- dfZone %>%
 dfZonePercentiles <- dfZone %>%
     group_by(scenario, treatment, timestep, Zone_LN) %>%
     summarise(p.050 = quantile(cumulpropBurned, 0.05, na.rm = T),
+              p.250 = quantile(cumulpropBurned, 0.25, na.rm = T),
               p.500 = quantile(cumulpropBurned, 0.5, na.rm = T),
+              p.750 = quantile(cumulpropBurned, 0.75, na.rm = T),
               p.950 = quantile(cumulpropBurned, 0.95, na.rm = T),
               cumulPropMean = mean(cumulpropBurned, na.rm = T),
               medianRate = median(meanRate))
@@ -442,7 +473,9 @@ for (ts in 1:50) {
         filter(timestep <= ts) %>%
         group_by(scenario, treatment, Zone_LN) %>%
         summarize(p.050 = max(p.050),
+                  p.250 = max(p.250),
                   p.500 = max(p.500),
+                  p.750 = max(p.750),
                   p.950 = max(p.950),
                   cumulPropMean = max(cumulPropMean),
                   medianRate = max(medianRate),
@@ -477,10 +510,6 @@ labelDF <- dfZonePercentiles %>%
   
 dfZone <- merge(dfZone, dfZonePercentiles)
 
-p <- c(p.050 = "5%", p.500 = "médiane", p.950 = "95%")
-
-
-
 require(ggplot2)
 #options(scipen=999)
 
@@ -497,15 +526,21 @@ for (s in c("baseline", "RCP85")) {
     m <- ggplot(df, aes(x = timestep + 2015, y = cumulpropBurned, group = ID)) +
         #ylim(c(0,0.5)) +
         geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
-        geom_line(aes_string(y = names(p)[2], group = 1),
+        geom_line(aes_string(y = names(p)[3], group = 1),
                   colour = "lightblue",
                   linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
-        geom_line(aes_string(y = names(p)[3], group = 1),
-                  colour = "yellow",
-                  linetype = 4, size = 0.5, alpha = 1) +
         geom_line(aes_string(y = names(p)[1], group = 1),
                   colour = "yellow",
-                  linetype = 4, size = 0.5, alpha = 1) +
+                  linetype = 3, size = 0.3, alpha = 1) +
+        geom_line(aes_string(y = names(p)[5], group = 1),
+                  colour = "yellow",
+                  linetype = 3, size = 0.3, alpha = 1) +
+        geom_line(aes_string(y = names(p)[2], group = 1),
+                  colour = "yellow",
+                  linetype = 4, size = 0.4, alpha = 1) +
+        geom_line(aes_string(y = names(p)[4], group = 1),
+                  colour = "yellow",
+                  linetype = 4, size = 0.4, alpha = 1) +
         #fill = "grey25"
         #geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
         facet_grid(Zone_LN~treatment) +
@@ -539,9 +574,11 @@ for (s in c("baseline", "RCP85")) {
               theme(legend.position="top", legend.direction="horizontal",
                     axis.text.x = element_text(angle = 45, hjust = 1),
                     strip.text.y = element_text(size = 8))+
-              labs(title ="Proportion cumulative du territoire productif où une forêt immature a brûlé",
-                   subtitle = paste0("En bleu sont illustrées les médianes et en jaune les percentiles ", p[1], " et ", p[3],
-                                     " sur un total de ", nRep, " réalisations."),
+              labs(title = paste0("Proportion cumulative du territoire productif où une forêt immature a brûlé\n",
+                                  sName[s]),
+                   subtitle = paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
+                                     p[1], ", ", p[2], ", ", p[4], " et ", p[5],
+                                     ",\nsur un total de ", nRep, " réalisations."),
                    caption = paste0("Maturité épinette: ", maturity["EN"], " ans; ",
                                     "Maturité pin gris: ",maturity["PG"], " ans; Taux de récolte annuel de 0.51%"),
                    x = "Année",
@@ -554,4 +591,57 @@ for (s in c("baseline", "RCP85")) {
     
     dev.off()
 }
+
+
+
+### Figure synthèse (toute les courbes)
+
+df <- dfZone %>%
+    filter(Zone_LN == "Global") %>%
+    group_by(scenario, treatment, timestep) %>%
+    summarize(p.050 = unique(p.050),
+              p.250 = unique(p.250),
+              p.500 = unique(p.500),
+              p.750 = unique(p.750),
+              p.950 = unique(p.950))
+
+
+head(df)
+
+nRep <- nrow(distinct(dfZone[,c("scenario", "simID")]))
+m <- ggplot(df, aes(x = timestep + 2015, y = p.500,
+                    color = scenario, linetype = treatment)) +
+    #ylim(c(0,0.5)) +
+    # geom_ribbon(aes(ymax = p.750, ymin = p.250,
+    #                 colour=NA, fill = scenario,
+    #                 alpha = 0.1)) +
+    geom_line(size = 0.75) +
+    scale_color_manual("", values = c(baseline = "darkseagreen3",
+                                      RCP85 ="darkred"),
+                       labels=c(baseline = "scénario de référence",
+                                RCP85 = "scénario RPC 8.5")) +
+    # scale_fill_manual("", values = c(baseline = "darkolivegreen3",
+    #                                   RCP85 ="red3"),
+    #                    labels=c(baseline = "scénario de référence",
+    #                             RCP85 = "scénario RPC 8.5")) +
+    scale_linetype_manual("", values = c(2, 1)) 
+    
+
+
+png(filename= paste0("immatureBurnsSummary.png"),
+    width = 7, height = 5, units = "in", res = 600, pointsize=10)
+options(scipen=999)
+
+print(m + theme_dark() +
+          
+          theme(legend.position="top", legend.direction="horizontal")+
+          labs(title = "Proportion cumulative du territoire productif où une forêt immature a brûlé",
+               subtitle = paste0("Valeurs médianes, issues d'un ensemble de ", nRep,  " simulations."),
+               caption = paste0("Maturité épinette: ", maturity["EN"], " ans; ",
+                                "Maturité pin gris: ",maturity["PG"], " ans; Taux de récolte annuel de 0.51%"),
+               x = "",
+               y = "Proportion cumulée"))
+
+
+dev.off()
 

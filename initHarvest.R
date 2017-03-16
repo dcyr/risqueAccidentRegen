@@ -66,7 +66,7 @@ harvestProp <- harvest & originYear>=year
 harvestProp[is.na(studyArea)] <- NA
 harvestProp[!(coverTypes %in% coverTypesProd)] <- NA
 plot(harvestProp)
-harvestRate <- mean(values(harvestProp), na.rm = T)/(2015-year)
+harvestRate <- mean(values(harvestProp), na.rm = T)/(2014-year)
 
 ### 0.005102012
 
@@ -94,7 +94,7 @@ p <- ggplot(data = df, aes(x = x, y = y, fill = value)) +
     coord_fixed() +
     scale_fill_manual(name = "",
                       values = cols,
-                      labels = paste0(coverLevels, " (", round(100 * table(df$value)/nrow(df), 1), "%)"),
+                      labels = coverLevels, #paste0(coverLevels, " (", round(100 * table(df$value)/nrow(df), 1), "%)"),
                       na.value = "dodgerblue1") +
     labs(x = "\nx (UTM 18)",
          y = "y (UTM 18)\n") +
