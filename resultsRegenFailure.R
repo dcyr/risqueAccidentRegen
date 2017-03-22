@@ -210,6 +210,7 @@ dfAreaCover <- dfArea %>%
     group_by(cover) %>%
     summarize(areaCover_ha = sum(areaTotal_ha))
 
+
 dfCover <- dfSummary %>%
     filter(burnedImmature == T) %>%
     #filter(simID == "000") %>%
@@ -222,6 +223,11 @@ dfCover <- dfSummary %>%
     group_by(scenario, treatment, simID, cover, burnedImmature) %>%
     mutate(cumulpropBurned = cumsum(propBurned)) 
 
+
+
+#####
+
+#####
 dfCoverTotal <- dfCover %>%
     group_by(scenario, treatment, simID, timestep, burnedImmature) %>%
     summarize(area_ha = sum(area_ha),
@@ -274,14 +280,14 @@ dfCover <- dfCover %>%
 dfCoverPercentiles <- dfCover %>%
     group_by(scenario, treatment, timestep, cover) %>%
     summarise(p.050 = quantile(cumulpropBurned, 0.05, na.rm = T),
+              p.100 = quantile(cumulpropBurned, 0.1, na.rm = T),
               p.250 = quantile(cumulpropBurned, 0.25, na.rm = T),
               p.500 = quantile(cumulpropBurned, 0.5, na.rm = T),
               p.750 = quantile(cumulpropBurned, 0.75, na.rm = T),
+              p.900 = quantile(cumulpropBurned, 0.9, na.rm = T),
               p.950 = quantile(cumulpropBurned, 0.95, na.rm = T),
               cumulPropMean = mean(cumulpropBurned, na.rm = T),
               medianRate = median(meanRate))
-
-
 
 ### make percentiles monotenous 
 for (ts in 1:50) {
@@ -289,15 +295,52 @@ for (ts in 1:50) {
         filter(timestep <= ts) %>%
         group_by(scenario, treatment, cover) %>%
         summarize(p.050 = max(p.050),
+                  p.100 = max(p.100),
                   p.250 = max(p.250),
                   p.500 = max(p.500),
                   p.750 = max(p.750),
+                  p.900 = max(p.900),
                   p.950 = max(p.950),
                   cumulPropMean = max(cumulPropMean),
                   medianRate = max(medianRate),
                   timestep = ts) %>%
         rbind(filter(dfCoverPercentiles, timestep != ts))
 }
+
+
+#### summary table by decade
+## zero pad
+dfTmp <- filter(as.data.frame(dfCoverPercentiles), timestep == 1)
+dfTmp[,c(4:11,13)] <- 0
+
+
+dfCoverPercentilesDecade <- as.data.frame(dfCoverPercentiles) %>%
+    filter(timestep %in% c(10,20,30,40,50)) %>%
+    rbind(dfTmp) %>%
+    arrange(scenario, treatment, cover, timestep) %>%
+    group_by(scenario, treatment, cover) %>%
+    mutate(diff_p.050 = c(NA, diff(p.050)),
+           diff_p.100 = c(NA, diff(p.100)),
+           diff_p.250 = c(NA, diff(p.250)),
+           diff_p.500 = c(NA, diff(p.500)),
+           diff_p.750 = c(NA, diff(p.750)),
+           diff_p.900 = c(NA, diff(p.900)),
+           diff_p.950 = c(NA, diff(p.950))) %>%
+    filter(timestep > 0) %>%
+    mutate(timestep = timestep - 5)
+
+dfCoverPercentilesDecade <- select(dfCoverPercentilesDecade,
+                                   scenario, treatment, timestep, cover,
+                                   diff_p.050,
+                                   diff_p.100,
+                                   diff_p.250,
+                                   diff_p.500,
+                                   diff_p.750,
+                                   diff_p.900,
+                                   diff_p.950)
+write.csv(dfCoverPercentilesDecade, file = "dfCoverPercentilesDecade.csv", row.names = F)
+
+
 
 dfCover <- merge(dfCover, dfCoverPercentiles)
 
@@ -460,28 +503,73 @@ dfZone <- dfZone %>%
 dfZonePercentiles <- dfZone %>%
     group_by(scenario, treatment, timestep, Zone_LN) %>%
     summarise(p.050 = quantile(cumulpropBurned, 0.05, na.rm = T),
+              p.100 = quantile(cumulpropBurned, 0.1, na.rm = T),
               p.250 = quantile(cumulpropBurned, 0.25, na.rm = T),
               p.500 = quantile(cumulpropBurned, 0.5, na.rm = T),
               p.750 = quantile(cumulpropBurned, 0.75, na.rm = T),
+              p.900 = quantile(cumulpropBurned, 0.9, na.rm = T),
               p.950 = quantile(cumulpropBurned, 0.95, na.rm = T),
               cumulPropMean = mean(cumulpropBurned, na.rm = T),
               medianRate = median(meanRate))
+
 
 ### make percentiles monotenous
 for (ts in 1:50) {
     dfZonePercentiles <- dfZonePercentiles %>%
         filter(timestep <= ts) %>%
         group_by(scenario, treatment, Zone_LN) %>%
-        summarize(p.050 = max(p.050),
+        summarize(timestep = ts,
+                  p.050 = max(p.050),
+                  p.100 = max(p.100),
                   p.250 = max(p.250),
                   p.500 = max(p.500),
                   p.750 = max(p.750),
+                  p.900 = max(p.900),
                   p.950 = max(p.950),
                   cumulPropMean = max(cumulPropMean),
-                  medianRate = max(medianRate),
-                  timestep = ts) %>%
+                  medianRate = max(medianRate)) %>%
         rbind(filter(dfZonePercentiles, timestep != ts))
 }
+
+# #### summary table by decade
+# ## zero pad
+# dfTmp <- filter(as.data.frame(dfZonePercentiles), timestep == 1)
+# head(dfTmp)
+# dfTmp[,c(4:11)] <- 0
+# 
+# 
+# dfZonePercentilesDecade <- as.data.frame(dfZonePercentiles) %>%
+#     filter(timestep %in% c(10,20,30,40,50)) %>%
+#     rbind(dfTmp) %>%
+#     arrange(scenario, treatment, Zone_LN, timestep) %>%
+#     group_by(scenario, treatment, Zone_LN) %>%
+#     mutate(diff_p.050 = c(NA, diff(p.050)),
+#            diff_p.100 = c(NA, diff(p.100)),
+#            diff_p.250 = c(NA, diff(p.250)),
+#            diff_p.500 = c(NA, diff(p.500)),
+#            diff_p.750 = c(NA, diff(p.750)),
+#            diff_p.900 = c(NA, diff(p.900)),
+#            diff_p.950 = c(NA, diff(p.950))) %>%
+#     filter(timestep > 0) %>%
+#     mutate(timestep = timestep - 5)
+# 
+# dfZonePercentilesDecade <- select(dfZonePercentilesDecade,
+#                                    scenario, treatment, timestep, Zone_LN,
+#                                    diff_p.050,
+#                                    diff_p.100,
+#                                    diff_p.250,
+#                                    diff_p.500,
+#                                    diff_p.750,
+#                                    diff_p.900,
+#                                    diff_p.950)
+# write.csv(dfZonePercentilesDecade, file = "dfZonePercentilesDecade.csv", row.names = F)
+
+####################
+
+
+
+
+
 labelDF <- dfZonePercentiles %>%
     filter(timestep == 50) %>%
     select(Zone_LN, scenario, treatment, timestep, medianRate)
