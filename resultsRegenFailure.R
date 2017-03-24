@@ -325,12 +325,14 @@ dfCoverPercentilesDecade <- as.data.frame(dfCoverPercentiles) %>%
            diff_p.500 = c(NA, diff(p.500)),
            diff_p.750 = c(NA, diff(p.750)),
            diff_p.900 = c(NA, diff(p.900)),
-           diff_p.950 = c(NA, diff(p.950))) %>%
+           diff_p.950 = c(NA, diff(p.950)),
+           diff_mean = c(NA, diff(cumulPropMean))) %>%
     filter(timestep > 0) %>%
     mutate(timestep = timestep - 5)
 
 dfCoverPercentilesDecade <- select(dfCoverPercentilesDecade,
                                    scenario, treatment, timestep, cover,
+                                   diff_mean,
                                    diff_p.050,
                                    diff_p.100,
                                    diff_p.250,
