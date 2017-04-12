@@ -34,7 +34,7 @@ studyArea <- raster("../data/studyArea.tif")
 ### harvesting parameters (to be updated)
 harvestedCoverTypes <- c("EN", "PG")
 maturityCoverTypes <- c(EN = 70, PG = 40)
-harvestingRates <- c(EN = 0.0051, PG = 0.0051)
+harvestingRates <- c(EN = 0.015, PG = 0.015)
 
 ID <- coverTypesLevels[match(harvestedCoverTypes, coverTypesLevels$descrip), "ID"]
 
@@ -68,7 +68,7 @@ replicates <- as.character(lapply(simInfo, function(x) x[3]))
 
 require(doSNOW)
 require(parallel)
-clusterN <-  max(1, floor(0.95*detectCores()))  ### choose number of nodes to add to cluster.
+clusterN <-  max(1, floor(0.9*detectCores()))  ### choose number of nodes to add to cluster.
 # #######
 cl = makeCluster(clusterN, outfile = "") ## 
 registerDoSNOW(cl)
@@ -91,7 +91,7 @@ foreach(i = seq_along(x)) %dopar%  {
                                 timeSinceFire,
                                 prescriptions)
     
-    fName <- paste0(getwd(), "/simHarvest_", scenario[i], "_", replicates[i], ".RData")
+    fName <- paste0(getwd(), "/simHarvest", prescriptions[1,4], "_", scenario[i], "_", replicates[i], ".RData")
     print("##############################################################")
     print("##############################################################")
     print(paste0("Simulation #", i, " completed.")) 
