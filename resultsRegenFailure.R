@@ -706,6 +706,8 @@ df <- dfZone %>%
               p.950 = unique(p.950))
 df$treatment <- c("0%", "0.51%", "1%", "1.5%")[match(df$harvestTreatment, unique(df$harvestTreatment))]
 
+write.csv(df, file = "summaryMedian.csv", row.names = T)
+
 
 nRep <- nrow(distinct(dfZone[,c("scenario", "simID")]))
 m <- ggplot(df, aes(x = timestep + 2015, y = p.500,
@@ -723,7 +725,7 @@ m <- ggplot(df, aes(x = timestep + 2015, y = p.500,
     #                                   RCP85 ="red3"),
     #                    labels=c(baseline = "scénario de référence",
     #                             RCP85 = "scénario RPC 8.5")) +
-    scale_linetype_manual("", values = c(1, 2, 3, 4)) 
+    scale_linetype_manual("Taux de récolte\nannuel", values = c(1, 2, 3, 4)) 
     
 
 
@@ -733,7 +735,8 @@ options(scipen=999)
 
     print(m + theme_dark() +
               
-              theme(legend.position="top", legend.direction="horizontal")+
+              theme(legend.position="top", legend.direction="horizontal",
+                    legend.title = element_text(size = rel(0.85)))+
               labs(title = "Proportion cumulative du territoire productif où une forêt immature a brûlé",
                    subtitle = paste0("Valeurs médianes, issues d'un ensemble de ", nRep,  " simulations."),
                    caption = paste0("Maturité épinette: ", maturity["EN"], " ans; ",
