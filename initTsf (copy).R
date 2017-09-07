@@ -96,7 +96,7 @@ p <- ggplot(data = df, aes_string("x", "y", fill = "tsf")) +
     theme_bw() +
     geom_raster() +
     coord_fixed() +
-    scale_fill_gradientn(name = c("Temps depuis la dernière perturbation initiale\n(années)"), #limits = c(0,1),
+    scale_fill_gradientn(name = c("Time since last disturbance\n(years)"), #limits = c(0,1),
                          colours = cols,
                          values = colValues/maxVal, limits = c(0,maxVal),
                          na.value = "dodgerblue1") +
@@ -115,7 +115,7 @@ print(p + theme(plot.title = element_text(size = rel(0.6)),
                 axis.text.x = element_text(size = rel(0.5)),
                 axis.text.y =  element_text(size = rel(0.5), angle = 90, hjust = 0.5),
                 legend.title = element_text(size = rel(0.75)),
-                legend.text = element_text(size = rel(0.5))))
+                legend.text = element_text(size = rel(0.75))))
 
 dev.off()
 
@@ -139,10 +139,12 @@ tsdInitGlobal <- tsdInitSummary %>%
 
 
 tsdInitSummary <- rbind(tsdInitSummary, tsdInitGlobal)
-coverLevels <- c(EN = "Épinette", PG = "Pin gris", F = "Feuillu", R = "Résineux", autres = "autres", Global = "Global")
-
+#coverLevels <- c(EN = "Épinette", PG = "Pin gris", F = "Feuillu", R = "Résineux", autres = "autres", Global = "Global")
+coverLevels <- c(EN = "Black spruce", PG = "Jack pine", F = "Deciduous", R = "Other conifers", autres = "Other", Global = "Global")
+disturbLevels <- c("Récoltes récentes" = "Recent harvest", "Autres perturbations" = "Other disturbances")
+#coverLevels <- c(EN = "Black spruce", PG = "Jack pine", F = "Deciduous", R = "Other conifers", autres = "Other", Global = "Global")
 tsdInitSummary$cover <- factor(coverLevels[tsdInitSummary$cover], levels = coverLevels)
-
+tsdInitSummary$harvest <- factor(disturbLevels[tsdInitSummary$harvest],levels = disturbLevels)
 
 #figure by fireZone
 png(filename="tsdDistribFireZones.png",
@@ -155,16 +157,18 @@ ggplot(data = tsdInitSummary, aes(x = tsdClass, weight = area_ha, group = harves
     geom_bar() +
     # geom_histogram(breaks = c(0, 10, seq(from = 20, to = 150, by = 20)),
     #                closed = "right") +
-    scale_fill_manual("", values = c("Récoltes récentes" = "grey75",
-                                  "Autres perturbations" = "grey25")) +
+    scale_fill_manual("", values = c("Recent harvest" = "grey75",
+                                  "Other disturbances" = "grey25")) +
     theme_dark() +
     theme(legend.position="top", legend.direction="horizontal") +
     facet_wrap(~Zone_LN) +
-    labs(title ="Structure d'âge",
-         subtitle = "Temps depuis la dernière perturbation (2015)",
-                        x = "Temps depuis la dernière perturbation (années)",
-                        y = "Superficie totale (ha)") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    labs(title ="Age structure",
+         subtitle = "Time since last disturbance (2015)",
+                        x = "Time since last disturbance (years)",
+                        y = "Total area (ha)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.title = element_text(size = rel(0.75)),
+          legend.text = element_text(size = rel(1)))
 
 dev.off()
 
@@ -179,15 +183,16 @@ ggplot(data = tsdInitSummary, aes(x = tsdClass, weight = area_ha, group = harves
                                   fill = harvest, stat="identity")) +
     geom_bar() +
     #geom_histogram(breaks = seq(from = 0, to = 150, by = 10)) +
-    scale_fill_manual("", values = c("Récoltes récentes" = "grey75",
-                                     "Autres perturbations" = "grey25")) +
+    scale_fill_manual("", values = c("Recent harvest" = "grey75",
+                                     "Other disturbances" = "grey25")) +
     theme_dark() +
     theme(legend.position="top", legend.direction="horizontal") +
     facet_wrap(~cover) +
-    labs(title ="Structure d'âge",
-         subtitle = "Temps depuis la dernière perturbation (2015)",
-         x = "Temps depuis la dernière perturbation (années)",
-         y = "Superficie totale (ha)") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    labs(title ="Age structure",
+         subtitle = "Time since last disturbance (2015)",
+         x = "Time since last disturbance (years)",
+         y = "Total area (ha)") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+         legend.text = element_text(size = rel(1)))
 
 dev.off()

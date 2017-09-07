@@ -146,6 +146,7 @@ rNA[] <- NA
 rNA[is.na(r)] <- 1
 df <- rasterToPoints(r)
 rNA <- rasterToPoints(rNA)
+#rNA[,3] <- NA
 rNA[,3] <- NA
 colnames(rNA)[3] <- colnames(df)[3]
 df <- rbind(df, data.frame(rNA))
@@ -160,8 +161,11 @@ df <- data.frame(df, Zone_LN = fireZoneNames[match(df[, "fireZones"],
                                                    fireZoneNames[complete.cases(fireZoneNames), "ID"]), "Zone_LN"])
 
 zoneLevels <- levels(df$Zone_LN)[order(as.numeric(gsub("[^0-9]", "", levels(df$Zone_LN))))]
-df$Zone_LN <- factor(df$Zone_LN, levels = zoneLevels)
-levels(df$Zone_LN) <- paste0(zoneLevels, " (", fireZoneNames[match(zoneLevels, fireZoneNames$Zone_LN), "fireCycle"], " ans)")
+df$Zone_LN <- factor(df$Zone_LN, levels = c(zoneLevels, "Large water bodies"))
+df[is.na(df$Zone_LN), "Zone_LN"] <- "Large water bodies"
+levels(df$Zone_LN) <- c(paste0(zoneLevels, " (", fireZoneNames[match(zoneLevels, fireZoneNames$Zone_LN), "fireCycle"], " years)"),
+                        "Large water bodies")
+
 
 studyAreaP <- get(load("../data/studyAreaP.RData"))
 studyAreaF <- fortify(studyAreaP)
@@ -171,7 +175,7 @@ pWidth  <- 1400
 pHeight <- 1200
 pointsize <- 8
 fireCols <- c("burlywood4", "darkseagreen4", "lightgoldenrod3", "orangered4", "palegreen4",
-              "orangered3", "lightsteelblue3", "darkgreen", "bisque3", "coral3")
+              "orangered3", "lightsteelblue3", "darkgreen", "bisque3", "coral3", "dodgerblue1")
 
 p <- ggplot(data = df, aes_string("x", "y", fill = "Zone_LN")) +
     theme_bw() +
@@ -180,10 +184,10 @@ p <- ggplot(data = df, aes_string("x", "y", fill = "Zone_LN")) +
     geom_polygon(aes(x = long, y = lat, group = group), data = studyAreaF,
                  colour = 'white', fill = NA, size = 1) +
     
-    scale_fill_manual(name = "Zones de régime de feu",
+    scale_fill_manual(name = "",
                       #palette = "Set1",
                       values = fireCols,
-                      na.value = "dodgerblue1") +
+                      na.value = "grey") +
     labs(x = "\nx (UTM 18)",
          y = "y (UTM 18)\n") +
     theme(legend.position="top", legend.direction="horizontal")
@@ -200,7 +204,7 @@ print(p + theme(plot.title = element_text(size = rel(0.6)),
                 axis.text.x = element_text(size = rel(0.5)),
                 axis.text.y =  element_text(size = rel(0.5), angle = 90, hjust = 0.5),
                 legend.title = element_text(size = rel(0.75)),
-                legend.text = element_text(size = rel(0.4))))# +
+                legend.text = element_text(size = rel(0.55))))# +
 # annotate("text", x = max(coverTypes$x), y = max(coverTypes$y),
 #          label = coverTypesSummary,
 #          hjust = 1, vjust = 0, size = 0.3*pointsize, fontface = 2))

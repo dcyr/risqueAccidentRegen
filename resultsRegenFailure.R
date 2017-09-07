@@ -46,8 +46,8 @@ dfArea[,"Zone_LN"] <- fireZoneNames[match(dfArea[, "ID"], fireZoneNames$ID), "Zo
 nTreatments <- 3
 prodClasses <- c("low","intermediate", "high")
 #### (30, 10); (40, 20); (50, 30); (70, 50); (90, 70); (110, 90);, and (130, 110).
-maturity <- list(EN = c(90, 50, 30),
-                 PG = c(70, 30, 10),
+maturity <- list(EN = c(30, 50, 90),
+                 PG = c(10, 30, 70),
                  R = rep(0, nTreatments),
                  F = rep(0, nTreatments))
 
@@ -241,9 +241,9 @@ dfSummary$harvestTreatment <- factor(dfSummary$harvestTreatment,
                                      levels = harvestTreatment)
 
 
-prodNames <- c(high = "High productivity",
-               intermediate = "Intermediate productivity",
-               low = "Low productivity")
+prodNames <- c(high = "Early maturity",
+               intermediate = "Intermediate maturity",
+               low = "Late maturity")
 
 dfSummary$productivity <- prodNames[dfSummary$productivity]
 ################################################################################
@@ -323,6 +323,9 @@ dfCover <- dfCover %>%
     filter(timestep != 50) %>%
     rbind(dfCoverPad)
 
+####
+write.csv(dfCover, file = "dfCover.csv", row.names = F)
+####
 
 dfCoverPercentiles <- dfCover %>%
     group_by(scenario, harvestTreatment, productivity, timestep, cover) %>%
@@ -397,7 +400,6 @@ dfCover <- merge(dfCover, dfCoverPercentiles)
 
 
 
-p <- c(p.050 = "5%", p.250 = "25%", p.500 = "médiane", p.750 = "75%", p.950 = "95%")
 
 # sName <- c(baseline = "Scénario de référence",
 #            RCP85 = "Scénario RCP 8.5")
@@ -408,16 +410,14 @@ sName <- c(baseline = "Baseline scenario",
 labelDF <- dfCoverPercentiles %>%
     filter(timestep == 50) %>%
     select(scenario, cover, harvestTreatment, productivity, timestep, medianRate)
-labelDF$productivity <-  factor(labelDF$productivity, levels =  c("Low productivity",
-                                                                  "Intermediate productivity",
-                                                                  "High productivity"))
-labelDF$productivity <-  factor(labelDF$productivity, levels =  c("Low productivity",
-                                                                  "Intermediate productivity",
-                                                                  "High productivity"))
+labelDF$productivity <-  factor(labelDF$productivity, levels =  c("Early maturity",
+                                                                  "Intermediate maturity",
+                                                                  "Late maturity"))
+
 labelDF$xLab <- factor(gsub("HarvestRate: ", "", labelDF$harvestTreatment), levels = c("0 %/yr","0.51 %/yr","1 %/yr","1.5 %/yr"))
 
 write.csv(labelDF, file = "dfFailureMedianRate.csv", row.names = F)
-
+prodClassesLabel <- c("early", "intermediate", "late")
 
 ### summary histogram
 cols = c("Black Spruce" = "darkolivegreen",
@@ -431,8 +431,8 @@ p <- ggplot(labelDF, aes(fill = cover, y = medianRate*100, x = xLab)) +
     facet_grid(scenario~productivity) +
     labs(y = "Median annual rate (%)",
          x = "Harvesting rate",
-         caption = paste0("Sexual maturity (years) - Black Spruce: ", paste(prodClasses, maturity[["EN"]], collapse = " ; "), "\n",
-                          "Jack Pine: ", paste(prodClasses, maturity[["PG"]], collapse = " ; ")),
+         caption = paste0("Sexual maturity (years) - Black Spruce: ", paste(prodClassesLabel, maturity[["EN"]], collapse = " ; "), "\n",
+                          "Jack Pine: ", paste(prodClassesLabel, maturity[["PG"]], collapse = " ; ")),
          title = "Median annual proportion of the landscape where immature stands were burned")
 
 png(filename = "immatureBurnsCover_medianRateSummary.png",
@@ -442,14 +442,18 @@ png(filename = "immatureBurnsCover_medianRateSummary.png",
 dev.off()
 
 
+
+
+p <- c(p.050 = "5%", p.250 = "25%", p.500 = "médiane", p.750 = "75%", p.950 = "95%")
+
 require(ggplot2)
 for (s in c("baseline", "RCP85")) {
     
     ### selecting subsample and fetching treatment specific parameters
     # sexual maturity
-    prodLabel <- "intermediate"
+    prodLabel <- "late" # c("Early maturity", "Intermediate maturity", "Late maturity")
     prodNames <- unique(dfCover$productivity)[grep(prodLabel, tolower(unique(dfCover$productivity)))]
-    prodIndex <- which(prodClasses == prodLabel)
+    prodIndex <- grep(prodLabel, prodClassesLabel)
 
     
     for (i in c("all", "Global")) {
@@ -461,7 +465,7 @@ for (s in c("baseline", "RCP85")) {
             labels <- labelDF %>%
                 filter(scenario == s,
                        productivity == prodNames) 
-            fName <- paste0("immatureBurnsCover_", s, "_", prodLabel, "Prod.png")
+            fName <- paste0("immatureBurnsCover_", s, "_", prodLabel, ".png")
             figHeight <- 6
         }
         if (i == "Global") {
@@ -479,21 +483,21 @@ for (s in c("baseline", "RCP85")) {
         nRep <- length(unique(df$simID))
 
         #options(scipen=999)
-        m <- ggplot(df, aes(x=timestep + 2015, y = cumulpropBurned, group = ID)) +
+        m <- ggplot(df, aes(x=timestep + 2015, y = 100*cumulpropBurned, group = ID)) +
             geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
-            geom_line(aes_string(y = names(p)[3], group = 1),
+            geom_line(aes(y = 100*p.500, group = 1),
                       colour = "lightblue",
                       linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
-            geom_line(aes_string(y = names(p)[1], group = 1),
+            geom_line(aes(y = 100*p.050, group = 1),
                       colour = "yellow",
                       linetype = 3, size = 0.3, alpha = 1) +
-            geom_line(aes_string(y = names(p)[5], group = 1),
+            geom_line(aes(y = 100*p.950, group = 1),
                       colour = "yellow",
                       linetype = 3, size = 0.3, alpha = 1) +
-            geom_line(aes_string(y = names(p)[2], group = 1),
+            geom_line(aes(y = 100*p.250, group = 1),
                       colour = "yellow",
                       linetype = 4, size = 0.4, alpha = 1) +
-            geom_line(aes_string(y = names(p)[4], group = 1),
+            geom_line(aes(y = 100*p.750, group = 1),
                       colour = "yellow",
                       linetype = 4, size = 0.4, alpha = 1) +
             theme_dark() #+
@@ -506,20 +510,22 @@ for (s in c("baseline", "RCP85")) {
             #             colour = "yellow",
             #             linetype = 4, size = 0.5, alpha = 1) 
         
-        ### arranging facets according to dataset
-        if (i == "Global") {
-            m <- m + facet_grid(productivity~harvestTreatment) +
-                labs(caption = paste0("Sexual maturity (years) - Black Spruce: ", paste(prodClasses, maturity[["EN"]], collapse = " ; "), "\n",
-                                      "Jack Pine: ", paste(prodClasses, maturity[["PG"]], collapse = " ; ")))
-        }
-        if (i == "all") {
-            m <- m + facet_grid(cover~harvestTreatment) +
-                labs(caption = paste0("\nSexual maturity (years): Black Spruce ", maturity[["EN"]][prodIndex], " ; ",
-                                      "Jack Pine ", maturity[["PG"]][prodIndex]))
-        }
         
         yMax <- layer_scales(m)$y$range$range[2]
         xMin <- layer_scales(m)$x$range$range[1]
+        ### arranging facets according to dataset
+        if (i == "Global") {
+            m <- m + facet_grid(productivity~harvestTreatment) +
+                labs(caption = paste0("Sexual maturity thresholds (years) - Black Spruce: ", paste(prodClassesLabel, maturity[["EN"]], collapse = " ; "), "\n",
+                                      "Jack Pine: ", paste(prodClassesLabel, maturity[["PG"]], collapse = " ; ")))
+        }
+        if (i == "all") {
+            m <- m + facet_grid(cover~harvestTreatment) +
+                labs(caption = paste0("Sexual maturity thresholds (years): Black Spruce ", maturity[["EN"]][prodIndex], " ; ",
+                                      "Jack Pine ", maturity[["PG"]][prodIndex]))
+        }
+        
+       
 
         
         png(filename = fName,
@@ -543,7 +549,7 @@ for (s in c("baseline", "RCP85")) {
                        
                        x = "",
                        #y = "Proportion cumulée")  +
-                       y = "Cumulative proportion")  +
+                       y = "Cumulative area (%)")  +
                   geom_text(aes(x = xMin, y = yMax, group = NULL,
                                 #label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
                                 label = paste0("median annual rate: ", round(100*medianRate, 3), "%")),
@@ -695,9 +701,9 @@ require(ggplot2)
 for (s in c("baseline", "RCP85")) {
     ### selecting subsample and fetching treatment specific parameters
     # sexual maturity
-    prodLabel <- "intermediate"
+    prodLabel <- "late" # c("Early maturity", "Intermediate maturity", "Late maturity")
     prodNames <- unique(dfZone$productivity)[grep(prodLabel, tolower(unique(dfZone$productivity)))]
-    prodIndex <- which(prodClasses == prodLabel)
+    prodIndex <- grep(prodLabel, prodClassesLabel)
    
     df <- dfZone %>%
         filter(scenario == s,
@@ -707,7 +713,7 @@ for (s in c("baseline", "RCP85")) {
     
     labels <- filter(labelDF, scenario == s,
                      productivity ==prodNames)
-    fName <- paste0("immatureBurnsFireZone_", s, "_", prodLabel, "Prod.png")
+    fName <- paste0("immatureBurnsFireZone_", s, "_", prodLabel, ".png")
     
     
     m <- ggplot(df, aes(x = timestep + 2015, y = cumulpropBurned, group = ID)) +
@@ -773,7 +779,7 @@ for (s in c("baseline", "RCP85")) {
                    
                    x = "",
                    #y = "Proportion cumulée")  +
-                   y = "Cumulative proportion")  +
+                   y = "Cumulative area (%)")  +
               geom_text(aes(x = xMin, y = yMax, group = NULL,
                             #label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
                             label = paste0("median annual rate: ", round(100*medianRate, 3), "%")),
@@ -803,7 +809,7 @@ write.csv(df, file = "summaryMedian.csv", row.names = T)
 
 
 nRep <- nrow(distinct(dfZone[,c("scenario", "simID")]))
-m <- ggplot(df, aes(x = timestep + 2015, y = p.500,
+m <- ggplot(df, aes(x = timestep + 2015, y = p.500*100,
                     color = scenario, linetype = treatment)) +
     facet_wrap( ~ productivity) +
     geom_line(size = 0.75) +
@@ -833,10 +839,10 @@ options(scipen=999)
                     title = element_text(size = rel(0.85))) +
               labs(title = "Cumulative proportion of productive area where immature stands were burned",
                    subtitle = paste0("Median estimates, computed from an ensemble of ", nRep,  " realizations."),
-                   caption = paste0("Sexual maturity (years) - Black Spruce: ", paste(prodClasses, maturity[["EN"]], collapse = " ; "), "\n",
-                                    "Jack Pine: ", paste(prodClasses, maturity[["PG"]], collapse = " ; ")),
+                   caption = paste0("Sexual maturity thresholds (years) - Black Spruce: ", paste(prodClassesLabel, maturity[["EN"]], collapse = " ; "), "\n",
+                                    "Jack Pine: ", paste(prodClassesLabel, maturity[["PG"]], collapse = " ; ")),
                    x = "",
-                   y = "Cumulative proportion"))
+                   y = "Cumulative area (%)"))
               # labs(title = "Figure 10: Proportion cumulative du territoire productif où une forêt immature a brûlé",
               #      subtitle = paste0("Valeurs médianes, issues d'un ensemble de ", nRep,  " simulations."),
               #      caption = paste0("Maturité épinette: ", maturity["EN"], " ans; ",

@@ -58,7 +58,8 @@ require(rgeos)
 coverTypesDf <- get(load("../data/coverTypesDf.RData"))
 ########################################
 
-coverLevels <- c(EN = "Épinette noire", PG = "Pin gris", R = "Résineux ind.", F = "Feuillus intolérants", autres = "autres")
+#coverLevels <- c(EN = "Épinette noire", PG = "Pin gris", R = "Résineux ind.", F = "Feuillus intolérants", autres = "autres")
+coverLevels <- c(EN = "Black spruce", PG = "Jack pine", R = "Other conifers", F = "Deciduous", autres = "Unproductive")
 coverTypesDf[,"cover"] <- NA
 index <- which(coverTypesDf$descrip %in% c("EAU", "Improductif", "INO", "Non_Forestiere"))
 coverTypesDf[index, "cover"] <- "autres"
@@ -80,7 +81,7 @@ p <- ggplot(data = coverTypesDf, aes_string("x", "y", fill = "cover")) +
     theme_bw() +
     geom_raster() +
     coord_fixed() +
-    scale_fill_manual(name = "Types de couvert",
+    scale_fill_manual(name = "",#"Cover types",
                       values = cols,
                       labels = paste0(coverLevels, " (", round(100 * table(coverTypesDf$cover)/nrow(coverTypesDf), 1), "%)"),
                       na.value = "dodgerblue1") +
@@ -93,12 +94,16 @@ png(filename = "coverInit.png",
     width = pWidth, height = pHeight, units = "px", res = 300, pointsize = pointsize,
     bg = "white")
 
-print(p + theme(plot.title = element_text(size = rel(0.6)),
+print(p +
+          #guide_legend(nrow=2,byrow=TRUE) +
+          theme(plot.title = element_text(size = rel(0.6)),
                 axis.title.x = element_text(size = rel(0.5)),
                 axis.title.y = element_text(size = rel(0.5)),
                 axis.text.x = element_text(size = rel(0.5)),
                 axis.text.y =  element_text(size = rel(0.5), angle = 90, hjust = 0.5),
                 legend.title = element_text(size = rel(0.6)),
-                legend.text = element_text(size = rel(0.35))))
+                legend.text = element_text(size = rel(0.75))) +
+          guides(fill=guide_legend(nrow=2,byrow=TRUE))
+      )
 
 dev.off()

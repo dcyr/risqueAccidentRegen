@@ -80,7 +80,8 @@ df[harvestProp == 1] <- 2
 df <- as.data.frame(rasterToPoints(df))
 df[,"value"] <- factor(c("prod", "recolte", "np")[df[,"studyArea"]], levels = c("prod", "recolte", "np"))
 cols <-  c(prod = "darkolivegreen", recolte = "green", np = "grey")
-coverLevels <- c(prod = "Productif", recolte = "Récolte 2000-2013", np = "Non productif")
+# coverLevels <- c(prod = "Productif", recolte = "Récolte 2000-2013", np = "Non productif")
+coverLevels <- c(prod = "Productive", recolte = "Harvested (2000-2013)", np = "Unproductive")
 
 require(ggplot2)
 ### plotting parameters
@@ -109,7 +110,7 @@ png(filename = "harvestInit.png",
     width = pWidth, height = pHeight, units = "px", res = 300, pointsize = pointsize,
     bg = "white")
 
-print(p + geom_text(aes(xMax, yMax, label = paste0("Taux de récolte annuel (2000 - 2013): ", round(100*harvestRate, 2), "%")),
+print(p + geom_text(aes(xMax, yMax, label = paste0("Annual harvest rate (2000 - 2013): 0.51%")),#, round(100*harvestRate, 2), "%")),
                    hjust = 1, vjust = 0, size = 2, fontface = 1) +
           theme(plot.title = element_text(size = rel(0.6)),
                 axis.title.x = element_text(size = rel(0.5)),
@@ -117,7 +118,7 @@ print(p + geom_text(aes(xMax, yMax, label = paste0("Taux de récolte annuel (200
                 axis.text.x = element_text(size = rel(0.5)),
                 axis.text.y =  element_text(size = rel(0.5), angle = 90, hjust = 0.5),
                 legend.title = element_text(size = rel(0.75)),
-                legend.text = element_text(size = rel(0.5))))
+                legend.text = element_text(size = rel(0.75))))
 
 dev.off()
 
