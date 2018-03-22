@@ -15,6 +15,7 @@ rm(wwd)
 ####################################################################
 ######
 require(raster)
+require(dplyr)
 studyArea <- raster("../data/studyArea.tif")
 coverTypes <- raster("../data/coverTypes.tif")
 coverTypesDf <- get(load("../data/coverTypesDf.RData"))
