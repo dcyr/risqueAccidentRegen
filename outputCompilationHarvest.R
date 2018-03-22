@@ -31,7 +31,7 @@ fireZones[is.na(studyArea)] <- NA
 ##
 convFactor <- prod(res(studyArea))/10000### to convert to hectares
 coverTypeArea <-  zonal(!is.na(coverTypes), coverTypes, sum)
-coverTypeArea <- data.frame(zone = as.character(coverTypesTable[match(coverTypesID, coverTypesTable$ID),"descrip"]),
+coverTypeArea <- data.frame(coverType = as.character(coverTypesTable[match(coverTypesID, coverTypesTable$ID),"descrip"]),
                            coverTypeArea_ha = coverTypeArea[,2] * convFactor)
 
 
@@ -90,6 +90,5 @@ outputCompiled <- foreach(i = seq_along(x), .combine = "rbind") %dopar% {#
 }
 
 stopCluster(cl)
-
 outputCompiled <- merge(outputCompiled, coverTypeArea)
 save(outputCompiled, file = "outputCompiledHarvest.RData")
