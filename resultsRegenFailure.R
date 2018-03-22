@@ -166,73 +166,73 @@ rm(simInfo)
 #     rm(preFireConditions)
 # }
 
-# ################################################################################
-# ################################################################################
-# ### Subsetting (using 'outputCompiledFinal')
-# outputCompiled <- get(load("../compiledOutputs/outputCompiledFinalEnsemble.RData"))
-# rcp85Rep <- filter(outputCompiled, scenario == "RCP85")[,"replicate"]
-# rcp85Rep <- unique(rcp85Rep[order(rcp85Rep)])
-# 
-# harvestRates <- c("0.0051", "0.010", "0.015")
-# dfSummary <- foreach(i = seq_along(harvestRates), .combine = "rbind") %do%  {
-#     preFireConditions <- get(load(paste0("../compiledOutputs/outputCompiledPreFireConditions_hr", harvestRates[i], ".RData")))
-#     preFireBaseline <- filter(preFireConditions, scenario =="baseline")
-#     preFireRCP85 <- preFireConditions %>%
-#         filter(scenario =="RCP85") %>%
-#         mutate(replicate = as.numeric(simID)) %>%
-#         filter(replicate %in% rcp85Rep)
-#     preFireConditions <- rbind(preFireBaseline, preFireRCP85[,colnames(preFireBaseline)])
-#     rm(preFireBaseline, preFireRCP85)
-# 
-#     #################
-#     tmp <- foreach(j = 1:nTreatments, .combine = "rbind") %do% {
-# 
-#         dfSummary <- preFireConditions %>%
-#             filter(cover %in% c("EN", "PG", "R", "F")) %>%
-#             select(scenario, harvestRate, simID, timestep, fireZone, cover, tsfPrefire, tsdPrefire)
-# 
-#         m <- rapply(maturity, function(x) x[j])
-#         dfSummary <- data.frame(dfSummary,
-#                                 maturity = m[as.character(dfSummary$cover)],
-#                                 productivity = prodClasses[j])
-# 
-#         dfSummary <- dfSummary%>%
-#             mutate(burnedImmature = tsdPrefire < maturity,
-#                    harvestTreatment = harvestRates[i])
-# 
-#         if (i == 1) {## just to compute once instead of a few times unnecessarily
-#             dfSummary2 <- dfSummary %>%
-#                 mutate(burnedImmature = tsfPrefire < maturity,
-#                        harvestTreatment = 0) #%>%
-#             dfSummary <- rbind(dfSummary, dfSummary2)
-#             rm(dfSummary2)
-#         }
-#         dfSummary <- dfSummary %>%
-#             group_by(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature) %>%
-#             summarise(area_ha = n()*25)
-# 
-# 
-# 
-#         dfSummary <- dfSummary %>%
-#             select(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature, area_ha) %>%
-#             arrange(scenario, harvestTreatment, simID, timestep, fireZone, cover, burnedImmature, area_ha)
-# 
-#         dfSummary[, "Zone_LN"] <- fireZoneNames[match(dfSummary$fireZone, fireZoneNames$ID), "Zone_LN"]
-# 
-# 
-#         return(dfSummary)
-#     }
-#     rm(preFireConditions)
-#     return(tmp)
-# }
-# write.csv(dfSummary, file = "regenSummary.csv", row.names = F)
+################################################################################
+################################################################################
+### Subsetting (using 'outputCompiledFinal')
+outputCompiled <- get(load("../compiledOutputs/outputCompiledFinalEnsemble.RData"))
+rcp85Rep <- filter(outputCompiled, scenario == "RCP85")[,"replicate"]
+rcp85Rep <- unique(rcp85Rep[order(rcp85Rep)])
+
+harvestRates <- c("0.0051", "0.010", "0.015")
+dfSummary <- foreach(i = seq_along(harvestRates), .combine = "rbind") %do%  {
+    preFireConditions <- get(load(paste0("../compiledOutputs/outputCompiledPreFireConditions_hr", harvestRates[i], ".RData")))
+    preFireBaseline <- filter(preFireConditions, scenario =="baseline")
+    preFireRCP85 <- preFireConditions %>%
+        filter(scenario =="RCP85") %>%
+        mutate(replicate = as.numeric(simID)) %>%
+        filter(replicate %in% rcp85Rep)
+    preFireConditions <- rbind(preFireBaseline, preFireRCP85[,colnames(preFireBaseline)])
+    rm(preFireBaseline, preFireRCP85)
+
+    #################
+    tmp <- foreach(j = 1:nTreatments, .combine = "rbind") %do% {
+
+        dfSummary <- preFireConditions %>%
+            filter(cover %in% c("EN", "PG", "R", "F")) %>%
+            select(scenario, harvestRate, simID, timestep, fireZone, cover, tsfPrefire, tsdPrefire)
+
+        m <- rapply(maturity, function(x) x[j])
+        dfSummary <- data.frame(dfSummary,
+                                maturity = m[as.character(dfSummary$cover)],
+                                productivity = prodClasses[j])
+
+        dfSummary <- dfSummary%>%
+            mutate(burnedImmature = tsdPrefire < maturity,
+                   harvestTreatment = harvestRates[i])
+
+        if (i == 1) {## just to compute once instead of a few times unnecessarily
+            dfSummary2 <- dfSummary %>%
+                mutate(burnedImmature = tsfPrefire < maturity,
+                       harvestTreatment = 0) #%>%
+            dfSummary <- rbind(dfSummary, dfSummary2)
+            rm(dfSummary2)
+        }
+        dfSummary <- dfSummary %>%
+            group_by(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature) %>%
+            summarise(area_ha = n()*25)
+
+
+
+        dfSummary <- dfSummary %>%
+            select(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature, area_ha) %>%
+            arrange(scenario, harvestTreatment, simID, timestep, fireZone, cover, burnedImmature, area_ha)
+
+        dfSummary[, "Zone_LN"] <- fireZoneNames[match(dfSummary$fireZone, fireZoneNames$ID), "Zone_LN"]
+
+
+        return(dfSummary)
+    }
+    rm(preFireConditions)
+    return(tmp)
+}
+write.csv(dfSummary, file = "regenSummary.csv", row.names = F)
 
 
 
 ################################################################################
 dfSummary <- read.csv("../compiledOutputs/regenSummary.csv")
 
-### renaiming some levels for nicer plotting 
+### renaming some levels for nicer plotting 
 
 dfSummary$harvestTreatment <- paste0("HarvestRate: ", 100*dfSummary$harvestTreatment, " %/yr")
 harvestTreatment <- unique(dfSummary$harvestTreatment)

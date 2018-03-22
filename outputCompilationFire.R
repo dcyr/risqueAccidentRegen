@@ -32,7 +32,9 @@ fireZoneArea <- rbind(fireZoneArea, data.frame(zone = "total", areaZone_ha = sum
 ######      compiling simulation outputs
 ######
 x <- list.files(outputFolder)
-x <- x[grep(".RData", x)]
+index <- grep(".RData", x)
+index <- intersect(index, grep("Fire", x))
+x <- x[index]
 simInfo <- gsub(".RData", "", x)
 simInfo <- strsplit(simInfo, "_")
 scenario <- as.character(lapply(simInfo, function(x) x[[2]]))
