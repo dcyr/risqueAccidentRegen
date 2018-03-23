@@ -32,7 +32,7 @@ fireZones[is.na(studyArea)] <- NA
 convFactor <- prod(res(studyArea))/10000### to convert to hectares
 coverTypeArea <-  zonal(!is.na(coverTypes), coverTypes, sum)
 coverTypeArea <- data.frame(coverType = as.character(coverTypesTable[match(coverTypesID, coverTypesTable$ID),"descrip"]),
-                           coverTypeArea_ha = coverTypeArea[,2] * convFactor)
+                            areaCoverTypeTotal_ha = coverTypeArea[,2] * convFactor)
 
 
 ####################################################################
@@ -91,4 +91,13 @@ outputCompiled <- foreach(i = seq_along(x), .combine = "rbind") %dopar% {#
 
 stopCluster(cl)
 outputCompiled <- merge(outputCompiled, coverTypeArea)
+
+### filtering for final ensemble
+outputCompiledFinal <- get(load("../compiledOutputs/outputCompiledFinalEnsemble.RData"))
+rcp85Rep <- filter(outputCompiledFinal, scenario == "RCP85")[,"replicate"]
+rcp85Rep <- unique(rcp85Rep[order(rcp85Rep)])
+outputCompiled <- filter(outputCompiled, scenario == "baseline" |
+                             (scenario == "RCP85" & replicate %in% rcp85Rep))
+###
 save(outputCompiled, file = "outputCompiledHarvest.RData")
+write.csv(outputCompiled, "outputCompiledHarvest.csv", row.names = F)
