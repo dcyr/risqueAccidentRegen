@@ -1,7 +1,20 @@
-# Analyse de risque d'accident de régénération (en développement)
-Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier et Tadeusz Splawinski  
+---
+title: "Analyse de risque d'accident de régénération (en développement)"
+author: Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier
+  et Tadeusz Splawinski
+output:
+  html_document:
+    keep_md: yes
+    theme: cosmo
+    toc: yes
+  word_document: 
+    toc: yes
+  pdf_document:
+    latex_engine: lualatex
+    toc: yes
+---
 
-Mis à jour le 13 Mar 2017
+Mis à jour le 26 Mar 2018
 
 
 -------
@@ -58,8 +71,7 @@ Fait à noter que ces paramètres peuvent varier au cours d'une même simulation
 
 Comme le cycle des feux ($cycle = 1/\lambda$), la taille moyenne des feux $\bar{S}$ (dérivée de la distribution de tailles), la taille du territoire à l'étude $A$ et la durée de la simulation _T_ sont ainsi définis *a priori*, il devient possible de déterminer le nombre de feux à simuler à chaque pas de temps $\bar{N}$ en l'isolant de l'équation suivante:
 
-<div style="img-align:center"><img src ="README_files/figure-html/cycle.gif" /></div>
-
+<!--  <div style="img-align:center"><img src ="README_files/figure-html/cycle.gif" /></div> --> 
 
 Tel qu'actuellement simulé, le nombre "d'allumages" est une variable aléatoire résultant de tirage d'un distribution de Poisson de moyenne $\bar{N}$.
 
