@@ -2,16 +2,9 @@
 title: "Analyse de risque d'accident de régénération (en développement)"
 author: Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier
   et Tadeusz Splawinski
-output:
-  html_document:
+output: 
+  html_document: 
     keep_md: yes
-    theme: cosmo
-    toc: yes
-  word_document: 
-    toc: yes
-  pdf_document:
-    latex_engine: lualatex
-    toc: yes
 ---
 
 Mis à jour le 26 Mar 2018
@@ -39,9 +32,7 @@ Un modèle de succès de régénération après feux, dépendant des conditions 
 Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de 1.2 Mha, excluant les grands cours d'eau. 
 
 
-<img src="README_files/figure-html/unnamed-chunk-2-1.png" style="display: block; margin: auto;" />
-
-
+![](figures/studyAreaLargeScale.png)
 ------------
 
 
