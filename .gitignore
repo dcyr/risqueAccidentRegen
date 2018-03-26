@@ -1,7 +1,7 @@
 .Rhistory
 [0-9]*
 outputs
-*.html
+
 manuscript
 *old
 *OLD
