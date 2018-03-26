@@ -2,16 +2,6 @@
 title: "Analyse de risque d'accident de régénération (en développement)"
 author: Dépôt maintenu par Dominic Cyr; projet en collaboration avec Sylvie Gauthier
   et Tadeusz Splawinski
-output:
-  html_document:
-    keep_md: yes
-    theme: cosmo
-    toc: yes
-  word_document: 
-    toc: yes
-  pdf_document:
-    latex_engine: lualatex
-    toc: yes
 ---
 
 Mis à jour le `r format(Sys.time(), "%d %b %Y")`
