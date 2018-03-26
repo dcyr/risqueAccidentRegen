@@ -58,14 +58,7 @@ Un modèle de succès de régénération après feux, dépendant des conditions 
 Le territoire à l'étude est situé à l'est du lac Mistassini, tout juste au sud de la limite nordique des forêts attribuables. Il est d'une superficie totale de `r round(totalArea/1000000, 1)` Mha, excluant les grands cours d'eau. 
 
 
-```{r fig.height = 6, fig.align = "center", echo=FALSE}
-library(png)
-library(grid)
-img <- readPNG("figures/studyAreaLargeScale.png")
- grid.raster(img)
-```
-
-
+![](figures/studyAreaLargeScale.png)
 ------------
 
 
