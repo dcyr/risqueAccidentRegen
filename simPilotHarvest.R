@@ -4,6 +4,8 @@
 ######
 ###### Prepares simulation inputs
 ###### Deploys experimental design
+###### Each harvesting treatemts (rates) are currently simulated manually
+###### (could easily be automated)
 ######
 ###### Dominic Cyr, in collaboration with Tadeusz Splawinski and Sylvie Gauthier
 ####################################################################################################
@@ -33,8 +35,9 @@ studyArea <- raster("../data/studyArea.tif")
 
 ### harvesting parameters (to be updated)
 harvestedCoverTypes <- c("EN", "PG")
-maturityCoverTypes <- c(EN = 70, PG = 40)
+maturityCoverTypes <- c(EN = 90, PG = 76)
 harvestingRates <- c(EN = 0.015, PG = 0.015)
+#harvestingRates <- 1/maturityCoverTypes
 
 ID <- coverTypesLevels[match(harvestedCoverTypes, coverTypesLevels$descrip), "ID"]
 
