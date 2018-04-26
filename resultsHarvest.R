@@ -57,16 +57,22 @@ summaryHarvest <- outputCompiled %>%
 
 #summaryHarvest <- merge(summaryHarvest, coverTypeArea)
 
+require("RColorBrewer")
+
+
 for (p in c("p01", "p05", "p25", "p50", "p75", "p95")) {
     riskTol <- paste0(100-as.numeric(gsub("[^0-9]","", p)), "%")
     percentile <- as.numeric(gsub("[^0-9]","", p))
     varName <- paste0(p, "Harvest_ha")
     df <- summaryHarvest[,c("scenario", "coverType", "harvestTreatment", "year", "areaCoverTypeTotal_ha", varName)]
+    ### reformatting harvest treatments for better readability
+    df$harvestTreatment <- as.numeric(as.character(df$harvestTreatment))
+    df$harvestTreatment <- paste(100 * df$harvestTreatment, "%")
     colnames(df)[which(colnames(df)==varName)] <- "value"
     
     
     m <- ggplot(df, aes(x = year + 2015, y = (value/areaCoverTypeTotal_ha)*100,
-                        linetype = harvestTreatment)) +
+                        linetype = harvestTreatment, colour = harvestTreatment)) +
         facet_grid(coverType ~ scenario) +
         geom_line(size = 0.75) +
         # scale_color_manual("", values = c(EN = "darkseagreen3",
@@ -79,8 +85,11 @@ for (p in c("p01", "p05", "p25", "p50", "p75", "p95")) {
         #                                   RCP85 ="red3"),
         #                    labels=c(baseline = "scénario de référence",
         #                             RCP85 = "scénario RPC 8.5")) +
-        scale_linetype_manual("Taux de récolte\nannuel ciblé", values = c(1, 2, 3),
-                              label = c("0.51%","1%", "1.5%")) 
+        # scale_linetype_manual("Taux de récolte\nannuel ciblé", values = c(1, 2, 3, 4, 5, 6),
+        #                       label = c("0.51%","1%", "1.5%")) 
+        scale_colour_manual("Taux de récolte\nannuel ciblé",
+                            values = brewer.pal(length(unique(df$harvestTreatment)), "Greens"))
+                                                 #label = c("0.51%","1%", "1.5%")) 
     
     
     
@@ -98,8 +107,8 @@ for (p in c("p01", "p05", "p25", "p50", "p75", "p95")) {
               labs(title = "Analyse de risque de rupture d'approvisionnement",
                    #subtitle = paste0(percentile, "e percentile"),
                    subtitle = paste0(nSims, " simulations"),
-                   caption = paste0("Âge de récolte - Épinette noire: 70 ans\n",
-                                    "Pin gris: 40 ans\n",
+                   caption = paste0("Âge de récolte - Épinette noire: 90 ans\n",
+                                    "Pin gris: 76 ans\n",
                                     "Cycle des feux - baseline: 101 ans\n",
                                     "RCP 8.5 (2015-2040): 57 ans\n",
                                     "RCP 8.5 (2041-2065): 33 ans"),
@@ -119,5 +128,5 @@ for (p in c("p01", "p05", "p25", "p50", "p75", "p95")) {
 
 
 
-
+colorRampPalette()
 
