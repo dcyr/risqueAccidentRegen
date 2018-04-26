@@ -102,7 +102,7 @@ for (h in seq_along(harvestingRates[[1]])) { ### this loops through harvesting t
                                     timeSinceFire,
                                     prescriptions)
         
-        fName <- paste0(getwd(), "/simHarvest", prescriptions[1,4], "_", scenario[i], "_", replicates[i], ".RData")
+        fName <- paste0(getwd(), "/simHarvest_", prescriptions[1,4], "_", scenario[i], "_", replicates[i], ".RData")
         print("##############################################################")
         print("##############################################################")
         print(paste0("Simulation #", i, " completed.")) 
