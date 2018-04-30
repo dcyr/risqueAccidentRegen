@@ -76,156 +76,156 @@ harvestRates <- unique(as.character(lapply(simInfo, function(x) x[[2]])))
 rm(simInfo)
 
 
-################################################################################
-###############################################################################
-## computing pre-fire conditions
-clusterN <-  max(1, floor(0.8*detectCores()))  ### choose number of nodes to add to cluster.
-for (hr in harvestRates) {
-    index <- grep(hr, filesHarvest)
-    filesHarvestSubset <- filesHarvest[index]
-
-    cl = makeCluster(clusterN, outfile = "")
-    registerDoSNOW(cl)
-
-    preFireConditions <- foreach(i = seq_along(filesFire), .combine = "rbind") %dopar%  {
-        require(reshape2)
-        require(data.table)
-        require(stringr)
-        require(foreach)
-        require(raster)
-        r <- replicates[i]
-        s <- scenario[i]
-
-        fires <- get(load(paste(outputDir, filesFire[i], sep = "/")))
-        harvests <- get(load(paste0(outputDir, "/simHarvest_", hr, "_", s, "_", r, ".RData")))
-
-        fires$tsf[is.na(studyArea)] <- NA
-
-
-        tsf <- crop(fires$tsf, c(range(df$x),
-                                 range(df$y)))
-        timesteps <- as.numeric(gsub("[^0-9]", "", names(tsf)))
-        names(tsf) <- paste0("F", timesteps)
-
-        tsh <- crop(harvests, c(range(df$x),
-                                range(df$y)))
-
-
-
-        tsd <- list()
-        ### extracting minimum values (time since last disturbance)
-        for (l in 1:nlayers(tsf)) {
-            x <- stack(tsf[[l]], tsh[[l]])
-            tsd[[l]] <- min(x, na.rm = T)
-
-        }
-        tsd <- stack(tsd)
-        names(tsd) <- paste0("D", timesteps)
-
-        ### formating tsf
-        x <- rasterToPoints(tsf)
-        tsf <- merge(df, x, all = F)
-
-        ### formating tsd
-        x <- rasterToPoints(tsd)
-        tsd <- merge(df, x, all = F)
-
-        productive <- rep(1, nrow(tsd))
-
-        x <- foreach(j = seq_along(timesteps), .combine = "rbind") %do% {
-            ts <- timesteps[j]
-            colIndex <- which(colnames(tsf) == paste0("F", ts))
-            ## tsf == 0focussing on fire pixels to identify regen failures
-            index <- which(tsf[,colIndex]==0)
-            cover <- tsf[index, "descrip"]
-            fireZone <- tsf[index, "fireZones"]
-            if (j == 1) {
-                tsfPrefire <- tsdPrefire <- tsf[index, "tsfInit"]
-
-            } else {
-                tsfPrefire <- tsf[index, colIndex-1]
-                tsdPrefire <- tsd[index, colIndex-1]
-            }
-            dfTmp <- data.frame(tsfPrefire, tsdPrefire, cover, fireZone)
-            if (nrow(dfTmp) > 0) {
-                dfTmp["timestep"] <- ts
-                dfTmp["simID"] <- r
-                dfTmp["scenario"] <- s
-                dfTmp["harvestRate"] <- as.numeric(hr)
-                return(dfTmp)
-            }
-
-        }
-        print(paste("scenario", s, "; replicate", r, "; harvest rate ", as.numeric(hr)))
-        return(x)
-    }
-    stopCluster(cl)
-    #################
-    save(preFireConditions, file = paste0("outputCompiledPreFireConditions_hr", hr, ".RData"))
-    #################
-    rm(preFireConditions)
-}
-
 # ################################################################################
-# ################################################################################
-# ### Subsetting (using 'outputCompiledFinal')
-# outputCompiled <- get(load("../compiledOutputs/outputCompiledFinalEnsemble.RData"))
-# rcp85Rep <- filter(outputCompiled, scenario == "RCP85")[,"replicate"]
-# rcp85Rep <- unique(rcp85Rep[order(rcp85Rep)])
+# ###############################################################################
+# ## computing pre-fire conditions
+# clusterN <-  max(1, floor(0.8*detectCores()))  ### choose number of nodes to add to cluster.
+# for (hr in c("0.0051", "0.01", "0.015")) {
+#     index <- grep(hr, filesHarvest)
+#     filesHarvestSubset <- filesHarvest[index]
 # 
-# harvestRates <- c("0.0051", "0.010", "0.015")
-# dfSummary <- foreach(i = seq_along(harvestRates), .combine = "rbind") %do%  {
-#     preFireConditions <- get(load(paste0("../compiledOutputs/outputCompiledPreFireConditions_hr", harvestRates[i], ".RData")))
-#     preFireBaseline <- filter(preFireConditions, scenario =="baseline")
-#     preFireRCP85 <- preFireConditions %>%
-#         filter(scenario =="RCP85") %>%
-#         mutate(replicate = as.numeric(simID)) %>%
-#         filter(replicate %in% rcp85Rep)
-#     preFireConditions <- rbind(preFireBaseline, preFireRCP85[,colnames(preFireBaseline)])
-#     rm(preFireBaseline, preFireRCP85)
+#     cl = makeCluster(clusterN, outfile = "")
+#     registerDoSNOW(cl)
 # 
-#     #################
-#     tmp <- foreach(j = 1:nTreatments, .combine = "rbind") %do% {
+#     preFireConditions <- foreach(i = seq_along(filesFire), .combine = "rbind") %dopar%  {
+#         require(reshape2)
+#         require(data.table)
+#         require(stringr)
+#         require(foreach)
+#         require(raster)
+#         r <- replicates[i]
+#         s <- scenario[i]
 # 
-#         dfSummary <- preFireConditions %>%
-#             filter(cover %in% c("EN", "PG", "R", "F")) %>%
-#             select(scenario, harvestRate, simID, timestep, fireZone, cover, tsfPrefire, tsdPrefire)
+#         fires <- get(load(paste(outputDir, filesFire[i], sep = "/")))
+#         harvests <- get(load(paste0(outputDir, "/simHarvest_", hr, "_", s, "_", r, ".RData")))
 # 
-#         m <- rapply(maturity, function(x) x[j])
-#         dfSummary <- data.frame(dfSummary,
-#                                 maturity = m[as.character(dfSummary$cover)],
-#                                 productivity = prodClasses[j])
+#         fires$tsf[is.na(studyArea)] <- NA
 # 
-#         dfSummary <- dfSummary%>%
-#             mutate(burnedImmature = tsdPrefire < maturity,
-#                    harvestTreatment = harvestRates[i])
 # 
-#         if (i == 1) {## just to compute once instead of a few times unnecessarily
-#             dfSummary2 <- dfSummary %>%
-#                 mutate(burnedImmature = tsfPrefire < maturity,
-#                        harvestTreatment = 0) #%>%
-#             dfSummary <- rbind(dfSummary, dfSummary2)
-#             rm(dfSummary2)
+#         tsf <- crop(fires$tsf, c(range(df$x),
+#                                  range(df$y)))
+#         timesteps <- as.numeric(gsub("[^0-9]", "", names(tsf)))
+#         names(tsf) <- paste0("F", timesteps)
+# 
+#         tsh <- crop(harvests, c(range(df$x),
+#                                 range(df$y)))
+# 
+# 
+# 
+#         tsd <- list()
+#         ### extracting minimum values (time since last disturbance)
+#         for (l in 1:nlayers(tsf)) {
+#             x <- stack(tsf[[l]], tsh[[l]])
+#             tsd[[l]] <- min(x, na.rm = T)
+# 
 #         }
-#         dfSummary <- dfSummary %>%
-#             group_by(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature) %>%
-#             summarise(area_ha = n()*25)
+#         tsd <- stack(tsd)
+#         names(tsd) <- paste0("D", timesteps)
 # 
+#         ### formating tsf
+#         x <- rasterToPoints(tsf)
+#         tsf <- merge(df, x, all = F)
 # 
+#         ### formating tsd
+#         x <- rasterToPoints(tsd)
+#         tsd <- merge(df, x, all = F)
 # 
-#         dfSummary <- dfSummary %>%
-#             select(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature, area_ha) %>%
-#             arrange(scenario, harvestTreatment, simID, timestep, fireZone, cover, burnedImmature, area_ha)
+#         productive <- rep(1, nrow(tsd))
 # 
-#         dfSummary[, "Zone_LN"] <- fireZoneNames[match(dfSummary$fireZone, fireZoneNames$ID), "Zone_LN"]
+#         x <- foreach(j = seq_along(timesteps), .combine = "rbind") %do% {
+#             ts <- timesteps[j]
+#             colIndex <- which(colnames(tsf) == paste0("F", ts))
+#             ## tsf == 0focussing on fire pixels to identify regen failures
+#             index <- which(tsf[,colIndex]==0)
+#             cover <- tsf[index, "descrip"]
+#             fireZone <- tsf[index, "fireZones"]
+#             if (j == 1) {
+#                 tsfPrefire <- tsdPrefire <- tsf[index, "tsfInit"]
 # 
+#             } else {
+#                 tsfPrefire <- tsf[index, colIndex-1]
+#                 tsdPrefire <- tsd[index, colIndex-1]
+#             }
+#             dfTmp <- data.frame(tsfPrefire, tsdPrefire, cover, fireZone)
+#             if (nrow(dfTmp) > 0) {
+#                 dfTmp["timestep"] <- ts
+#                 dfTmp["simID"] <- r
+#                 dfTmp["scenario"] <- s
+#                 dfTmp["harvestRate"] <- as.numeric(hr)
+#                 return(dfTmp)
+#             }
 # 
-#         return(dfSummary)
+#         }
+#         print(paste("scenario", s, "; replicate", r, "; harvest rate ", as.numeric(hr)))
+#         return(x)
 #     }
+#     stopCluster(cl)
+#     #################
+#     save(preFireConditions, file = paste0("outputCompiledPreFireConditions_hr", hr, ".RData"))
+#     #################
 #     rm(preFireConditions)
-#     return(tmp)
 # }
-# write.csv(dfSummary, file = "regenSummary.csv", row.names = F)
+
+################################################################################
+################################################################################
+### Subsetting (using 'outputCompiledFinal')
+outputCompiled <- get(load("../compiledOutputs/outputCompiledFinalEnsemble.RData"))
+rcp85Rep <- filter(outputCompiled, scenario == "RCP85")[,"replicate"]
+rcp85Rep <- unique(rcp85Rep[order(rcp85Rep)])
+
+harvestRates <- c("0.0051", "0.010", "0.015")
+dfSummary <- foreach(i = seq_along(harvestRates), .combine = "rbind") %do%  {
+    preFireConditions <- get(load(paste0("../compiledOutputs/outputCompiledPreFireConditions_hr", harvestRates[i], ".RData")))
+    preFireBaseline <- filter(preFireConditions, scenario =="baseline")
+    preFireRCP85 <- preFireConditions %>%
+        filter(scenario =="RCP85") %>%
+        mutate(replicate = as.numeric(simID)) %>%
+        filter(replicate %in% rcp85Rep)
+    preFireConditions <- rbind(preFireBaseline, preFireRCP85[,colnames(preFireBaseline)])
+    rm(preFireBaseline, preFireRCP85)
+
+    #################
+    tmp <- foreach(j = 1:nTreatments, .combine = "rbind") %do% {
+
+        dfSummary <- preFireConditions %>%
+            filter(cover %in% c("EN", "PG", "R", "F")) %>%
+            select(scenario, harvestRate, simID, timestep, fireZone, cover, tsfPrefire, tsdPrefire)
+
+        m <- rapply(maturity, function(x) x[j])
+        dfSummary <- data.frame(dfSummary,
+                                maturity = m[as.character(dfSummary$cover)],
+                                productivity = prodClasses[j])
+
+        dfSummary <- dfSummary%>%
+            mutate(burnedImmature = tsdPrefire < maturity,
+                   harvestTreatment = harvestRates[i])
+
+        if (i == 1) {## just to compute once instead of a few times unnecessarily
+            dfSummary2 <- dfSummary %>%
+                mutate(burnedImmature = tsfPrefire < maturity,
+                       harvestTreatment = 0) #%>%
+            dfSummary <- rbind(dfSummary, dfSummary2)
+            rm(dfSummary2)
+        }
+        dfSummary <- dfSummary %>%
+            group_by(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature) %>%
+            summarise(area_ha = n()*25)
+
+
+
+        dfSummary <- dfSummary %>%
+            select(scenario, harvestTreatment, productivity, simID, timestep, fireZone, cover, burnedImmature, area_ha) %>%
+            arrange(scenario, harvestTreatment, simID, timestep, fireZone, cover, burnedImmature, area_ha)
+
+        dfSummary[, "Zone_LN"] <- fireZoneNames[match(dfSummary$fireZone, fireZoneNames$ID), "Zone_LN"]
+
+
+        return(dfSummary)
+    }
+    rm(preFireConditions)
+    return(tmp)
+}
+write.csv(dfSummary, file = "regenSummary.csv", row.names = F)
 # 
 # 
 # 
