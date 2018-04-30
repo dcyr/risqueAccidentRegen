@@ -173,7 +173,7 @@ outputCompiled <- get(load("../compiledOutputs/outputCompiledFinalEnsemble.RData
 rcp85Rep <- filter(outputCompiled, scenario == "RCP85")[,"replicate"]
 rcp85Rep <- unique(rcp85Rep[order(rcp85Rep)])
 
-harvestRates <- c("0.0051", "0.010", "0.015")
+harvestRates <- c("0.0051", "0.0100", "0.0150")
 dfSummary <- foreach(i = seq_along(harvestRates), .combine = "rbind") %do%  {
     preFireConditions <- get(load(paste0("../compiledOutputs/outputCompiledPreFireConditions_hr", harvestRates[i], ".RData")))
     preFireBaseline <- filter(preFireConditions, scenario =="baseline")
