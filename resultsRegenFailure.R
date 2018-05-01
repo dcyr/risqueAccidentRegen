@@ -46,8 +46,8 @@ dfArea[,"Zone_LN"] <- fireZoneNames[match(dfArea[, "ID"], fireZoneNames$ID), "Zo
 nTreatments <- 3
 prodClasses <- c("low","intermediate", "high")
 #### (30, 10); (40, 20); (50, 30); (70, 50); (90, 70); (110, 90);, and (130, 110).
-maturity <- list(EN = c(30, 50, 90),
-                 PG = c(10, 30, 70),
+maturity <- list(EN = c(90, 50, 30),
+                 PG = c(70, 30, 10),
                  R = rep(0, nTreatments),
                  F = rep(0, nTreatments))
 
@@ -231,6 +231,7 @@ rm(simInfo)
 
 ################################################################################
 dfSummary <- read.csv("../compiledOutputs/regenSummary.csv")
+
 
 ### renaming some levels for nicer plotting
 
@@ -448,115 +449,117 @@ p <- c(p.050 = "5%", p.250 = "25%", p.500 = "médiane", p.750 = "75%", p.950 = "
 
 require(ggplot2)
 for (s in c("baseline", "RCP85")) {
-
-    ### selecting subsample and fetching treatment specific parameters
-    # sexual maturity
-    prodLabel <- "late" # c("Early maturity", "Intermediate maturity", "Late maturity")
-    prodNames <- unique(dfCover$productivity)[grep(prodLabel, tolower(unique(dfCover$productivity)))]
-    prodIndex <- grep(prodLabel, prodClassesLabel)
-
-
-    for (i in c("all", "Global")) {
-        if (i == "all") {
-            df <- dfCover %>%
-                filter(scenario == s,
-                       productivity == prodNames) %>%
-                mutate(ID = as.numeric(as.factor(paste(scenario, harvestTreatment, simID))))
-            labels <- labelDF %>%
-                filter(scenario == s,
-                       productivity == prodNames)
-            fName <- paste0("immatureBurnsCover_", s, "_", prodLabel, ".png")
-            figHeight <- 6
+    for (prod in c("late", "intermediate", "early")) {
+        
+        ### selecting subsample and fetching treatment specific parameters
+        # sexual maturity
+        prodLabel <- prod # c("Early maturity", "Intermediate maturity", "Late maturity")
+        prodNames <- unique(dfCover$productivity)[grep(prodLabel, tolower(unique(dfCover$productivity)))]
+        prodIndex <- grep(prodLabel, prodClassesLabel)
+    
+    
+        for (i in c("all", "Global")) {
+            if (i == "all") {
+                df <- dfCover %>%
+                    filter(scenario == s,
+                           productivity == prodNames) %>%
+                    mutate(ID = as.numeric(as.factor(paste(scenario, harvestTreatment, simID))))
+                labels <- labelDF %>%
+                    filter(scenario == s,
+                           productivity == prodNames)
+                fName <- paste0("immatureBurnsCover_", s, "_", prodLabel, ".png")
+                figHeight <- 6
+            }
+            if (i == "Global") {
+                df <- dfCover %>%
+                    filter(scenario == s,
+                           cover == i) %>%
+                    mutate(ID = as.numeric(as.factor(paste(scenario, harvestTreatment, simID))))
+                labels <- labelDF %>%
+                    filter(scenario == s,
+                           cover == i)
+                fName <- paste0("immatureBurnsGlobal_", s, ".png")
+                figHeight <- 6
+            }
+    
+            nRep <- length(unique(df$simID))
+    
+            #options(scipen=999)
+            m <- ggplot(df, aes(x=timestep + 2015, y = 100*cumulpropBurned, group = ID)) +
+                geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
+                geom_line(aes(y = 100*p.500, group = 1),
+                          colour = "lightblue",
+                          linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
+                geom_line(aes(y = 100*p.050, group = 1),
+                          colour = "yellow",
+                          linetype = 3, size = 0.3, alpha = 1) +
+                geom_line(aes(y = 100*p.950, group = 1),
+                          colour = "yellow",
+                          linetype = 3, size = 0.3, alpha = 1) +
+                geom_line(aes(y = 100*p.250, group = 1),
+                          colour = "yellow",
+                          linetype = 4, size = 0.4, alpha = 1) +
+                geom_line(aes(y = 100*p.750, group = 1),
+                          colour = "yellow",
+                          linetype = 4, size = 0.4, alpha = 1) +
+                theme_dark() #+
+                # geom_smooth(span = 0.7, aes_string(y = names(p)[2], group = 1),
+                #             colour="lightblue", linetype = 1, size = 0.7, alpha = 1) +
+                # geom_smooth(span = 0.2, aes_string(y = names(p)[1], group = 1),
+                #             colour = "yellow",
+                #             linetype = 4, size = 0.5, alpha = 1) +
+                # geom_smooth(span = 0.2, aes_string(y = names(p)[3], group = 1),
+                #             colour = "yellow",
+                #             linetype = 4, size = 0.5, alpha = 1)
+    
+    
+            yMax <- layer_scales(m)$y$range$range[2]
+            xMin <- layer_scales(m)$x$range$range[1]
+            ### arranging facets according to dataset
+            if (i == "Global") {
+                m <- m + facet_grid(productivity~harvestTreatment) +
+                    labs(caption = paste0("Sexual maturity thresholds (years) - Black Spruce: ", paste(prodClassesLabel, maturity[["EN"]], collapse = " ; "), "\n",
+                                          "Jack Pine: ", paste(prodClassesLabel, maturity[["PG"]], collapse = " ; ")))
+            }
+            if (i == "all") {
+                m <- m + facet_grid(cover~harvestTreatment) +
+                    labs(caption = paste0("Sexual maturity thresholds (years): Black Spruce ", maturity[["EN"]][prodIndex], " ; ",
+                                          "Jack Pine ", maturity[["PG"]][prodIndex]))
+            }
+    
+    
+    
+    
+            png(filename = fName,
+                width = 7.5, height = figHeight, units = "in", res = 600, pointsize=8)
+    
+    
+            print(m + theme_dark() +
+                      theme(legend.position="top", legend.direction="horizontal",
+                            axis.text.x = element_text(angle = 45, hjust = 1),
+                            strip.text.y = element_text(size = 8)) +
+                      #labs(title = paste0("Proportion cumulative du territoire productif où une forêt immature a brûlé\n",
+                      labs(title = paste0("Cumulative proportion of productive area where immature stands were burned\n",
+                                          sName[s]),
+                           subtitle = #paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
+                               paste0("Median scenarios are highlighted in blue and percentiles ",
+                                             # p[1], ", ", p[2], ", ", p[4], " et ", p[5],
+                                             p[1], ", ", p[2], ", ", p[4], " and ", p[5],
+                                             # ",\nsur un total de ", nRep, " réalisations."),
+                            #sur un total de ", nRep, " réalisations."),
+                           " in yellow\n(Total of ", nRep, " realizations)"),
+    
+                           x = "",
+                           #y = "Proportion cumulée")  +
+                           y = "Cumulative area (%)")  +
+                      geom_text(aes(x = xMin, y = yMax, group = NULL,
+                                    #label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
+                                    label = paste0("median annual rate: ", round(100*medianRate, 3), "%")),
+                                data = labels,
+                                hjust = 0, size = 3, fontface = 1))
+    
+            dev.off()
         }
-        if (i == "Global") {
-            df <- dfCover %>%
-                filter(scenario == s,
-                       cover == i) %>%
-                mutate(ID = as.numeric(as.factor(paste(scenario, harvestTreatment, simID))))
-            labels <- labelDF %>%
-                filter(scenario == s,
-                       cover == i)
-            fName <- paste0("immatureBurnsGlobal_", s, ".png")
-            figHeight <- 6
-        }
-
-        nRep <- length(unique(df$simID))
-
-        #options(scipen=999)
-        m <- ggplot(df, aes(x=timestep + 2015, y = 100*cumulpropBurned, group = ID)) +
-            geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
-            geom_line(aes(y = 100*p.500, group = 1),
-                      colour = "lightblue",
-                      linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
-            geom_line(aes(y = 100*p.050, group = 1),
-                      colour = "yellow",
-                      linetype = 3, size = 0.3, alpha = 1) +
-            geom_line(aes(y = 100*p.950, group = 1),
-                      colour = "yellow",
-                      linetype = 3, size = 0.3, alpha = 1) +
-            geom_line(aes(y = 100*p.250, group = 1),
-                      colour = "yellow",
-                      linetype = 4, size = 0.4, alpha = 1) +
-            geom_line(aes(y = 100*p.750, group = 1),
-                      colour = "yellow",
-                      linetype = 4, size = 0.4, alpha = 1) +
-            theme_dark() #+
-            # geom_smooth(span = 0.7, aes_string(y = names(p)[2], group = 1),
-            #             colour="lightblue", linetype = 1, size = 0.7, alpha = 1) +
-            # geom_smooth(span = 0.2, aes_string(y = names(p)[1], group = 1),
-            #             colour = "yellow",
-            #             linetype = 4, size = 0.5, alpha = 1) +
-            # geom_smooth(span = 0.2, aes_string(y = names(p)[3], group = 1),
-            #             colour = "yellow",
-            #             linetype = 4, size = 0.5, alpha = 1)
-
-
-        yMax <- layer_scales(m)$y$range$range[2]
-        xMin <- layer_scales(m)$x$range$range[1]
-        ### arranging facets according to dataset
-        if (i == "Global") {
-            m <- m + facet_grid(productivity~harvestTreatment) +
-                labs(caption = paste0("Sexual maturity thresholds (years) - Black Spruce: ", paste(prodClassesLabel, maturity[["EN"]], collapse = " ; "), "\n",
-                                      "Jack Pine: ", paste(prodClassesLabel, maturity[["PG"]], collapse = " ; ")))
-        }
-        if (i == "all") {
-            m <- m + facet_grid(cover~harvestTreatment) +
-                labs(caption = paste0("Sexual maturity thresholds (years): Black Spruce ", maturity[["EN"]][prodIndex], " ; ",
-                                      "Jack Pine ", maturity[["PG"]][prodIndex]))
-        }
-
-
-
-
-        png(filename = fName,
-            width = 7.5, height = figHeight, units = "in", res = 600, pointsize=8)
-
-
-        print(m + theme_dark() +
-                  theme(legend.position="top", legend.direction="horizontal",
-                        axis.text.x = element_text(angle = 45, hjust = 1),
-                        strip.text.y = element_text(size = 8)) +
-                  #labs(title = paste0("Proportion cumulative du territoire productif où une forêt immature a brûlé\n",
-                  labs(title = paste0("Cumulative proportion of productive area where immature stands were burned\n",
-                                      sName[s]),
-                       subtitle = #paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
-                           paste0("Median scenarios are highlighted in blue and percentiles ",
-                                         # p[1], ", ", p[2], ", ", p[4], " et ", p[5],
-                                         p[1], ", ", p[2], ", ", p[4], " and ", p[5],
-                                         # ",\nsur un total de ", nRep, " réalisations."),
-                        #sur un total de ", nRep, " réalisations."),
-                       " in yellow\n(Total of ", nRep, " realizations)"),
-
-                       x = "",
-                       #y = "Proportion cumulée")  +
-                       y = "Cumulative area (%)")  +
-                  geom_text(aes(x = xMin, y = yMax, group = NULL,
-                                #label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
-                                label = paste0("median annual rate: ", round(100*medianRate, 3), "%")),
-                            data = labels,
-                            hjust = 0, size = 3, fontface = 1))
-
-        dev.off()
     }
 }
 
