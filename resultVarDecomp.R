@@ -9,26 +9,36 @@ setwd(wwd)
 
 require(dplyr)
 
-
+harvValues <- c("HarvestRate: 0 %/yr" = 0,
+                "HarvestRate: 0.51 %/yr" = 0.0051,
+                "HarvestRate: 1 %/yr" = 0.01,
+                "HarvestRate: 1.5 %/yr" = 0.015)
+maturityThresholds <- list("Jack Pine" = c("Early maturity" = 10,
+                                           "Intermediate maturity" = 30,
+                                           "Early maturity" = 70),
+                           "Black Spruce" = c("Early maturity" = 30,
+                                              "Intermediate maturity" = 50,
+                                              "Early maturity" = 90))
+coverNames <- c(EN = "Black Spruce", PG = "Jack Pine", Global = "Global")
 #################################################################################
 ## fetching realized fire cycles
-fireOutputCompiled <- get(load("../compiledOutputs/outputCompiled.RData"))
+fireOutputCompiled <- get(load("../compiledOutputs/outputCompiledFire.RData"))
+harvestOutputCompiled <- get(load("../compiledOutputs/outputCompiledHarvest.RData"))
 initYear <- 2015
 #################################################################################
-## summarizing fire regimes
-fireSummary <- fireOutputCompiled %>%
-    filter(zone == "total") %>%
-    group_by(scenario, replicate) %>%
-    summarize(meanTSF = round((mean(meanTSF))),
-              fireCycle = round((1/mean(areaBurned_ha/areaZone_ha))),
-              propAAB = mean(areaBurned_ha/areaZone_ha)) %>%
-    arrange(scenario, replicate) %>%
-    mutate(simID = replicate) %>%
-    select(scenario, simID, propAAB)
+# ## summarizing fire regimes
+# fireSummary <- fireOutputCompiled %>%
+#     filter(zone == "total") %>%
+#     group_by(scenario, replicate) %>%
+#     summarize(meanTSF = round((mean(meanTSF))),
+#               fireCycle = round((1/mean(areaBurned_ha/areaZone_ha))),
+#               propAAB = mean(areaBurned_ha/areaZone_ha)) %>%
+#     arrange(scenario, replicate) %>%
+#     mutate(simID = replicate) %>%
+#     select(scenario, simID, propAAB)
 
 ## creating a more complete df with all years, and cumulative pAAB
-
-firePAAB <- fireOutputCompiled %>%
+fireSummary <- fireOutputCompiled %>%
     filter(zone == "total") %>%
     group_by(scenario, replicate) %>%
     arrange(year) %>%
@@ -37,7 +47,36 @@ firePAAB <- fireOutputCompiled %>%
     ungroup() %>%
     mutate(simID = replicate) %>%
     arrange(scenario, simID, year) %>%
-    select(scenario, year, simID, propAAB)
+    select(scenario, simID, year, propAAB)
+
+## summarizing harvests
+harvestSummary <- harvestOutputCompiled %>%
+    filter(harvestTreatment %in% c("0.0051", "0.01", "0.015")) %>%
+    mutate(harvestTreatment = as.numeric(as.character(harvestTreatment))) %>%
+    group_by(scenario, coverType, replicate, harvestTreatment) %>%
+    arrange(year) %>%
+    mutate(areaharvestedCumul_ha = cumsum(areaHarvested_ha),
+           propHarvestedAverage = round(areaharvestedCumul_ha/areaCoverTypeTotal_ha/year, 6)) %>%
+    ungroup() %>%
+    mutate(simID = replicate) %>%
+    arrange(scenario, simID, year, harvestTreatment) %>%
+    select(scenario, simID, coverType, year, harvestTreatment, areaharvestedCumul_ha, propHarvestedAverage)
+
+# adding zero values for harvestTreatment == 0
+harvestSummary <- harvestSummary %>%
+    filter(harvestTreatment <= 0.05100001) %>%
+    mutate(harvestTreatment = 0,
+           areaharvestedCumul_ha = 0,
+           propHarvestedAverage = 0) %>%
+    rbind(harvestSummary)
+
+
+## merging disturbances data frames
+dfDist <- merge(harvestSummary, fireSummary, all.x = T)
+# renaming factors
+dfDist[,"cover"] <-  factor(coverNames[as.character(dfDist$coverType)], levels = coverNames)
+dfDist <- select(dfDist, scenario, simID, year, cover, harvestTreatment, propAAB, propHarvestedAverage)
+# renaming harvesting levels
 
 
 #################################################################################
@@ -46,38 +85,39 @@ dfCover <- read.csv("../compiledOutputs/dfCover.csv")
 #################################################################################
 ## Tidying things up
 
-## ordering levels
-harvValues <- c("HarvestRate: 0 %/yr" = 0,
-                "HarvestRate: 0.51 %/yr" = 0.0051,
-                "HarvestRate: 1 %/yr" = .01,
-                "HarvestRate: 1.5 %/yr" = 0.015)
-maturityThresholds <- list("Jack Pine" = c("Early maturity" = 10,
-                                           "Intermediate maturity" = 30,
-                                           "Early maturity" = 70),
-                           "Black Spruce" = c("Early maturity" = 30,
-                                              "Intermediate maturity" = 50,
-                                              "Early maturity" = 90))
-
+# renaming cover types
+dfCover$cover <- factor(dfCover$cover, levels = coverNames)
 dfCover$harvestTreatment <- harvValues[as.character(dfCover$harvestTreatment)]
-dfCover$cover <- factor(dfCover$cover, levels = c("Black Spruce", "Jack Pine", "Global"))
-
-
-dfCover <- dfCover %>%
-    arrange(scenario, cover, simID, harvestTreatment, productivity,  timestep)
 
 
 ### padding data.frame for zero propBurned
-idVars <- c("scenario",  "simID", "harvestTreatment", "productivity")#,"cover",  "meanRate", "areaCover_ha")
+idVars <- c("scenario",  "simID", "harvestTreatment", "productivity", "cover", "timestep", "propBurned")#,"cover",  "meanRate", "areaCover_ha")
 dfCoverPad <- dfCover %>%
+    filter(cover != "Global") %>%
     distinct(scenario, simID, harvestTreatment, productivity) %>%
     merge(expand.grid(cover = levels(dfCover$cover),
                       timestep = 1:50), all = T) %>%
-    merge(dfCover[,c(idVars, "cover", "timestep", "propBurned")], all.x = T) %>%
+    merge(dfCover[,c(idVars)], all.x = T) %>%
     mutate(propBurned = ifelse(is.na(propBurned), 0, propBurned)) %>%
     group_by(scenario, simID, harvestTreatment, productivity, cover) %>%
     mutate(cumulPropBurned = cumsum(propBurned)) %>%
     ungroup()
 
+
+    
+
+
+# require(ggplot2)
+# ggplot(foo, aes(x = year, y = propHarvestedAverage, group = id, colour = harvestTreatment)) +
+#     geom_line() +
+#     facet_grid(scenario ~ cover)
+
+
+# ### adding realized harvest rates
+# dfCoverPad <- dfCoverPad %>%
+#     filter(cover != "Global") %>%
+#     merge(harvestSummary, all.x = T) %>%
+#     select(idVars, cumulPropBurned, propHarvestedAverage)
 
 
 #################################################################################
@@ -98,17 +138,19 @@ varPartition <- foreach(s = c("baseline", "RCP85"), .combine = "rbind") %do% {
         foreach(y = unique(dfCoverPad$timestep), .combine = "rbind") %dopar% {
             require(dplyr)
             require(vegan)
-            require(venneuler)
+            #require(venneuler)
             ## selecting fire year
-            fireDf <- firePAAB %>%
-                filter(year == y, scenario == s) %>%
-                select(scenario, simID, propAAB)
+            X <- dfDist %>%
+                filter(year == y, scenario == s, cover == sp) %>%
+                select(simID, harvestTreatment, propAAB, propHarvestedAverage)
+
             ## selecting corresponding regen failure
             df <- dfCoverPad %>%
-                filter(timestep == y, cover == sp) %>%
+                filter(scenario == s, timestep == y, cover == sp) %>%
                 mutate(maturity = maturityThresholds[[sp]][productivity]) %>%
-                merge(fireDf) %>%
-                select(propAAB, maturity, harvestTreatment, cumulPropBurned)
+                select(simID, harvestTreatment, maturity, cumulPropBurned) %>%
+                merge(X)
+            
             ## structuring data for varpart
             # response variable (can be a matrix, here it's only a vector)
             Y <- data.frame(cumulPropBurned = df$cumulPropBurned)
@@ -118,40 +160,40 @@ varPartition <- foreach(s = c("baseline", "RCP85"), .combine = "rbind") %do% {
             part <- varpart(Y, ~propAAB, ~maturity, ~harvestTreatment, data = X)
             
             
-            # if(y %in% tsPlot) {
-            #     ## classic Venn
-            #     png(filename = paste0("vennDiagClassic_", gsub(" ", "", sp), "_",
-            #                           s, "_", y, ".png"),
-            #         width = 5, height = 4, units = "in", res = 600, pointsize=8)
-            #     
-            #        
-            #         plot(part, main = "foo",
-            #              Xnames = c("Burn rate", "Age of maturity", "Harvesting level"),
-            #              cutoff = cutoff)
-            #     
-            #     dev.off()
-            #     ### Venn-Euler (proportional)
-            #     totalFrac <- part$part$frac[1:3,3]
-            #     indFrac <-     part$part$indfract[4:7, 3]
-            #     indFrac <- ifelse(indFrac<cutoff,0,indFrac)
-            #     residuals <-  part$part$indfract[8,3]
-            #     v <- venneuler(c("Fire" = totalFrac[1],
-            #                      "Maturity" = totalFrac[2],
-            #                      "Harvesting" = totalFrac[3],
-            #                      "Fire&Maturity"=  indFrac[1],
-            #                      "Fire&Harvesting"=  indFrac[2],
-            #                      "Maturity&Harvesting"=  indFrac[3],
-            #                      "Fire&Maturity&Harvesting"=  indFrac[4]))
-            #     v$labels <- paste0(v$labels, "\n(", round(totalFrac*100, 1), "%)")
-            #     
-            #     png(filename = paste0("vennDiagProp_", gsub(" ", "", sp), "_",
-            #                           s, "_", y, ".png"),
-            #         width = 5, height = 4, units = "in", res = 600, pointsize=8)
-            #         
-            #         plot(v, main = paste0("Variance partitioning\n",
-            #                               sp, " (timestep ", y, ")"))
-            #     dev.off()
-            # }
+           
+            # ## classic Venn
+            # png(filename = paste0("vennDiagClassic_", gsub(" ", "", sp), "_",
+            #                       s, "_", y, ".png"),
+            #     width = 5, height = 4, units = "in", res = 600, pointsize=8)
+            # 
+            # 
+            #     plot(part, main = "foo",
+            #          Xnames = c("Burn rate", "Age of maturity", "Harvesting level"),
+            #          cutoff = cutoff)
+            # 
+            # dev.off()
+            # ### Venn-Euler (proportional)
+            # totalFrac <- part$part$frac[1:3,3]
+            # indFrac <-     part$part$indfract[4:7, 3]
+            # indFrac <- ifelse(indFrac<cutoff,0,indFrac)
+            # residuals <-  part$part$indfract[8,3]
+            # v <- venneuler(c("Fire" = totalFrac[1],
+            #                  "Maturity" = totalFrac[2],
+            #                  "Harvesting" = totalFrac[3],
+            #                  "Fire&Maturity"=  indFrac[1],
+            #                  "Fire&Harvesting"=  indFrac[2],
+            #                  "Maturity&Harvesting"=  indFrac[3],
+            #                  "Fire&Maturity&Harvesting"=  indFrac[4]))
+            # v$labels <- paste0(v$labels, "\n(", round(totalFrac*100, 1), "%)")
+            # 
+            # png(filename = paste0("vennDiagProp_", gsub(" ", "", sp), "_",
+            #                       s, "_", y, ".png"),
+            #     width = 5, height = 4, units = "in", res = 600, pointsize=8)
+            # 
+            #     plot(v, main = paste0("Variance partitioning\n",
+            #                           sp, " (timestep ", y, ")"))
+            # dev.off()
+        
             
             x <- part$part$fract
             varPartition <- data.frame(scenario = s,
@@ -174,9 +216,9 @@ stopCluster(cl)
 ##########################################################
 
 ### replacing components with proper names
-compNames <- c("[a+d+f+g] = X1" = "Fire",
-               "[b+d+e+g] = X2" = "Maturity",
-               "[c+e+f+g] = X3" = "Harvesting")
+compNames <- c("[a+d+f+g] = X1" = "Fire activity",
+               "[b+d+e+g] = X2" = "Stand maturity threshold",
+               "[c+e+f+g] = X3" = "Targeted harvesting level")
 
 
 varPart <- varPartition %>%
@@ -185,6 +227,7 @@ varPart <- varPartition %>%
     mutate(Adj.R.square = ifelse(Adj.R.square<cutoff,0,Adj.R.square),
            component = compNames[as.character(component)]) %>%
     select(scenario, year, species, Adj.R.square, component)
+
 ## adding residuals
 varPart <- varPart %>%
     group_by(scenario, year, species) %>%
@@ -193,8 +236,11 @@ varPart <- varPart %>%
     ungroup() %>%
     rbind(varPart)
 
+## ordering factors for nicer ploting
+varPart$component <- factor(varPart$component, levels = c(compNames, "Residuals"))
+
 require(ggplot2)
-cols <- c("darkred", "darkgoldenrod3", "palegreen3", "grey25")#"aquamarine3")
+cols <- c("darkred", "palegreen3", "darkgoldenrod3", "grey25")#"aquamarine3")
 
 
 p <- ggplot(aes(y=Adj.R.square, x=scenario, fill = component), data = varPart) +
@@ -241,10 +287,9 @@ dev.off()
 ##########################################################
 
 ### replacing components with proper names
-compNames <- c("[a+d+f+g] = X1" = "Fire",
-               "[b+d+e+g] = X2" = "Maturity",
-               "[c+e+f+g] = X3" = "Harvesting")
-
+compNames <- c("[a+d+f+g] = X1" = "Fire activity",
+               "[b+d+e+g] = X2" = "Stand maturity threshold",
+               "[c+e+f+g] = X3" = "Targeted harvesting level")
 
 varPart <- varPartition %>%
     filter(component %in% names(compNames)) %>%
@@ -258,7 +303,8 @@ varPart <- varPart %>%
     mutate(component = "Residuals") %>% 
     ungroup() %>%
     rbind(varPart)
-
+## ordering factors for nicer ploting
+varPart$component <- factor(varPart$component, levels = c(compNames, "Residuals"))
 
 
 p <- ggplot(data = varPart,

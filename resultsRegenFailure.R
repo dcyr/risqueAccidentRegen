@@ -44,10 +44,10 @@ dfArea[,"Zone_LN"] <- fireZoneNames[match(dfArea[, "ID"], fireZoneNames$ID), "Zo
 
 
 nTreatments <- 3
-prodClasses <- c("low","intermediate", "high")
+prodClasses <- c( "high","intermediate", "low")
 #### (30, 10); (40, 20); (50, 30); (70, 50); (90, 70); (110, 90);, and (130, 110).
-maturity <- list(EN = c(90, 50, 30),
-                 PG = c(70, 30, 10),
+maturity <- list(EN = c(30, 50, 90),
+                 PG = c(10, 30, 70),
                  R = rep(0, nTreatments),
                  F = rep(0, nTreatments))
 
