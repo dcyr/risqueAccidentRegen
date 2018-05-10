@@ -44,7 +44,7 @@ dfArea[,"Zone_LN"] <- fireZoneNames[match(dfArea[, "ID"], fireZoneNames$ID), "Zo
 
 
 nTreatments <- 3
-prodClasses <- c( "high","intermediate", "low")
+prodClasses <- c("high","intermediate", "low")
 #### (30, 10); (40, 20); (50, 30); (70, 50); (90, 70); (110, 90);, and (130, 110).
 maturity <- list(EN = c(30, 50, 90),
                  PG = c(10, 30, 70),
@@ -703,94 +703,98 @@ require(ggplot2)
 for (s in c("baseline", "RCP85")) {
     ### selecting subsample and fetching treatment specific parameters
     # sexual maturity
-    prodLabel <- "late" # c("Early maturity", "Intermediate maturity", "Late maturity")
-    prodNames <- unique(dfZone$productivity)[grep(prodLabel, tolower(unique(dfZone$productivity)))]
-    prodIndex <- grep(prodLabel, prodClassesLabel)
-
-    df <- dfZone %>%
-        filter(scenario == s,
-               productivity ==prodNames) %>%
-        mutate(ID = as.numeric(as.factor(paste(scenario, harvestTreatment, simID))))
-    nRep <- length(unique(df$simID))
-
-    labels <- filter(labelDF, scenario == s,
-                     productivity ==prodNames)
-    fName <- paste0("immatureBurnsFireZone_", s, "_", prodLabel, ".png")
-
-
-    m <- ggplot(df, aes(x = timestep + 2015, y = cumulpropBurned, group = ID)) +
-        #ylim(c(0,0.5)) +
-        geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
-        geom_line(aes_string(y = names(p)[3], group = 1),
-                  colour = "lightblue",
-                  linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
-        geom_line(aes_string(y = names(p)[1], group = 1),
-                  colour = "yellow",
-                  linetype = 3, size = 0.3, alpha = 1) +
-        geom_line(aes_string(y = names(p)[5], group = 1),
-                  colour = "yellow",
-                  linetype = 3, size = 0.3, alpha = 1) +
-        geom_line(aes_string(y = names(p)[2], group = 1),
-                  colour = "yellow",
-                  linetype = 4, size = 0.4, alpha = 1) +
-        geom_line(aes_string(y = names(p)[4], group = 1),
-                  colour = "yellow",
-                  linetype = 4, size = 0.4, alpha = 1) +
-        #fill = "grey25"
-        #geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
-        facet_grid(Zone_LN~harvestTreatment) +
-        theme_dark() #+
-        # geom_smooth(span = 0.7, aes_string(y = names(p)[2], group = 1),
-        #             colour="lightblue", linetype = 1, size = 0.7, alpha = 1) #+
-        # geom_line(aes_string(y = names(p)[3], group = 1),
-        #             colour = "red",
-        #             linetype = 1, size = 0.25, alpha = 1) +
-        # geom_smooth(span = 0.5,
-        #             method = "lm",
-        #             aes_string(y = names(p)[3], group = 1),
-        #             colour = "red",
-        #             linetype = 4, size = 0.5, alpha = 1) +
-        # geom_smooth(span = 0.7, aes_string(y = names(p)[3], group = 1),
-        #             colour = "yellow",
-        #             linetype = 4, size = 0.5, alpha = 1) +
-        # geom_smooth(span = 0.7, aes_string(y = names(p)[1], group = 1),
-        #             colour = "yellow",
-        #             linetype = 4, size = 0.5, alpha = 1)
-
-    yMax <- layer_scales(m)$y$range$range[2]
-    xMin <- layer_scales(m)$x$range$range[1]
-
-    png(filename=fName,
-        width = 7.5, height = 12, units = "in", res = 600, pointsize=10)
-    options(scipen=999)
-
-    print(m + theme_dark() +
-
-              theme(legend.position="top", legend.direction="horizontal",
-                    axis.text.x = element_text(angle = 45, hjust = 1),
-                    strip.text.y = element_text(size = 8))+
-              labs(title = paste0("Cumulative proportion of productive area where immature stands were burned\n",
-                                  sName[s]),
-                   subtitle = #paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
-                       paste0("Median scenarios are highlighted in blue and percentiles ",
-                              # p[1], ", ", p[2], ", ", p[4], " et ", p[5],
-                              p[1], ", ", p[2], ", ", p[4], " and ", p[5],
-                              # ",\nsur un total de ", nRep, " réalisations."),
-                              #sur un total de ", nRep, " réalisations."),
-                              " in yellow\n(Total of ", nRep, " realizations)"),
-
-                   x = "",
-                   #y = "Proportion cumulée")  +
-                   y = "Cumulative area (%)")  +
-              geom_text(aes(x = xMin, y = yMax, group = NULL,
-                            #label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
-                            label = paste0("median annual rate: ", round(100*medianRate, 3), "%")),
-                        data = labels,
-                        hjust = 0, size = 3, fontface = 1))
-
-
-
-    dev.off()
+    
+    for (prod in c("late", "intermediate", "early")) {
+        prodLabel <- prod
+    
+        prodNames <- unique(dfZone$productivity)[grep(prodLabel, tolower(unique(dfZone$productivity)))]
+        prodIndex <- grep(prodLabel, prodClassesLabel)
+    
+        df <- dfZone %>%
+            filter(scenario == s,
+                   productivity ==prodNames) %>%
+            mutate(ID = as.numeric(as.factor(paste(scenario, harvestTreatment, simID))))
+        nRep <- length(unique(df$simID))
+    
+        labels <- filter(labelDF, scenario == s,
+                         productivity ==prodNames)
+        fName <- paste0("immatureBurnsFireZone_", s, "_", prodLabel, ".png")
+    
+    
+        m <- ggplot(df, aes(x = timestep + 2015, y = cumulpropBurned, group = ID)) +
+            #ylim(c(0,0.5)) +
+            geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
+            geom_line(aes_string(y = names(p)[3], group = 1),
+                      colour = "lightblue",
+                      linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
+            geom_line(aes_string(y = names(p)[1], group = 1),
+                      colour = "yellow",
+                      linetype = 3, size = 0.3, alpha = 1) +
+            geom_line(aes_string(y = names(p)[5], group = 1),
+                      colour = "yellow",
+                      linetype = 3, size = 0.3, alpha = 1) +
+            geom_line(aes_string(y = names(p)[2], group = 1),
+                      colour = "yellow",
+                      linetype = 4, size = 0.4, alpha = 1) +
+            geom_line(aes_string(y = names(p)[4], group = 1),
+                      colour = "yellow",
+                      linetype = 4, size = 0.4, alpha = 1) +
+            #fill = "grey25"
+            #geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
+            facet_grid(Zone_LN~harvestTreatment) +
+            theme_dark() #+
+            # geom_smooth(span = 0.7, aes_string(y = names(p)[2], group = 1),
+            #             colour="lightblue", linetype = 1, size = 0.7, alpha = 1) #+
+            # geom_line(aes_string(y = names(p)[3], group = 1),
+            #             colour = "red",
+            #             linetype = 1, size = 0.25, alpha = 1) +
+            # geom_smooth(span = 0.5,
+            #             method = "lm",
+            #             aes_string(y = names(p)[3], group = 1),
+            #             colour = "red",
+            #             linetype = 4, size = 0.5, alpha = 1) +
+            # geom_smooth(span = 0.7, aes_string(y = names(p)[3], group = 1),
+            #             colour = "yellow",
+            #             linetype = 4, size = 0.5, alpha = 1) +
+            # geom_smooth(span = 0.7, aes_string(y = names(p)[1], group = 1),
+            #             colour = "yellow",
+            #             linetype = 4, size = 0.5, alpha = 1)
+    
+        yMax <- layer_scales(m)$y$range$range[2]
+        xMin <- layer_scales(m)$x$range$range[1]
+    
+        png(filename=fName,
+            width = 7.5, height = 12, units = "in", res = 600, pointsize=10)
+        options(scipen=999)
+    
+        print(m + theme_dark() +
+    
+                  theme(legend.position="top", legend.direction="horizontal",
+                        axis.text.x = element_text(angle = 45, hjust = 1),
+                        strip.text.y = element_text(size = 8))+
+                  labs(title = paste0("Cumulative proportion of productive area where immature stands were burned\n",
+                                      sName[s]),
+                       subtitle = #paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
+                           paste0("Median scenarios are highlighted in blue and percentiles ",
+                                  # p[1], ", ", p[2], ", ", p[4], " et ", p[5],
+                                  p[1], ", ", p[2], ", ", p[4], " and ", p[5],
+                                  # ",\nsur un total de ", nRep, " réalisations."),
+                                  #sur un total de ", nRep, " réalisations."),
+                                  " in yellow\n(Total of ", nRep, " realizations)"),
+    
+                       x = "",
+                       #y = "Proportion cumulée")  +
+                       y = "Cumulative area (%)")  +
+                  geom_text(aes(x = xMin, y = yMax, group = NULL,
+                                #label = paste0("taux annuel médian: ", round(100*medianRate, 3), "%")),
+                                label = paste0("median annual rate: ", round(100*medianRate, 3), "%")),
+                            data = labels,
+                            hjust = 0, size = 3, fontface = 1))
+    
+    
+    
+        dev.off()
+    }
 }
 
 
@@ -826,7 +830,7 @@ m <- ggplot(df, aes(x = timestep + 2015, y = p.500*100,
     #                    labels=c(baseline = "scénario de référence",
     #                             RCP85 = "scénario RPC 8.5")) +
     #scale_linetype_manual("Taux de récolte\nannuel", values = c(1, 2, 3, 4))
-    scale_linetype_manual("Annual\nharvesting rate", values = c(1, 2, 3, 4))
+    scale_linetype_manual("Targeted annual\nharvesting rate", values = c(1, 2, 3, 4))
 
 
 

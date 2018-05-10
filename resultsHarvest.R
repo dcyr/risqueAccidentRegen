@@ -20,6 +20,7 @@ require(ggplot2)
 ######
 ### fetching compiled results
 outputCompiled <- get(load("../compiledOutputs/outputCompiledHarvest.RData"))
+
 # save(outputCompiled, file = "outputCompiledHarvest.RData")
 # write.csv(outputCompiled,, file = "outputCompiledHarvest.csv", row.names = F)
 # colnames(outputCompiled)[7] <- "areaCoverTypeTotal_ha"
@@ -58,19 +59,19 @@ summaryHarvest <- outputCompiled %>%
 ### summarizing results, shortfall probs
 shortfallDF <- outputCompiled %>%
     mutate(p50_shortfall = areaHarvested_ha/areaCoverTypeTotal_ha < .50*as.numeric(as.character(harvestTreatment)),
-           p20_shortfall = areaHarvested_ha/areaCoverTypeTotal_ha < .80*as.numeric(as.character(harvestTreatment)),
+           p25_shortfall = areaHarvested_ha/areaCoverTypeTotal_ha < .75*as.numeric(as.character(harvestTreatment)),
            p10_shortfall = areaHarvested_ha/areaCoverTypeTotal_ha < .90*as.numeric(as.character(harvestTreatment)),
            p05_shortfall = areaHarvested_ha/areaCoverTypeTotal_ha < .95*as.numeric(as.character(harvestTreatment))) %>%
     group_by(scenario, harvestTreatment, coverType, replicate) %>%
     arrange(year) %>%
     mutate(p50_shortfall = cumsum(p50_shortfall)>=1,
-           p20_shortfall = cumsum(p20_shortfall)>=1,
+           p25_shortfall = cumsum(p25_shortfall)>=1,
            p10_shortfall = cumsum(p10_shortfall)>=1,
            p05_shortfall = cumsum(p05_shortfall)>=1) %>%
     ungroup() %>%
     group_by(scenario, harvestTreatment, coverType, year) %>%
     summarise(p50_shortfall = sum(p50_shortfall)/n(),
-              p20_shortfall = sum(p20_shortfall)/n(),
+              p25_shortfall = sum(p25_shortfall)/n(),
               p10_shortfall = sum(p10_shortfall)/n(),
               p05_shortfall = sum(p05_shortfall)/n())
     
