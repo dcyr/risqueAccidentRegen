@@ -472,17 +472,17 @@ for (s in c("baseline", "RCP85")) {
             df <- dfCover %>%
                 # filter(scenario == s,
                 #        cover == i) %>%
-                filter(#scenario == s,
+                filter(scenario == s,
                        cover == i,
                        harvestTreatment == "HarvestRate: 0.51 %/yr",
                        productivity == prodNames) %>%
                 mutate(ID = as.numeric(as.factor(paste(scenario, simID))))
             labels <- labelDF %>%
-                filter(#scenario == s,
+                filter(scenario == s,
                        cover == i,
                        productivity == "Intermediate maturity",
                        harvestTreatment == "HarvestRate: 0.51 %/yr")  
-            fName <- paste0("immatureBurnsGlobal.png")
+            fName <- paste0("immatureBurnsGlobal_", s, ".png")
             figHeight <- 6
         }
 
@@ -535,7 +535,7 @@ for (s in c("baseline", "RCP85")) {
 
         
         png(filename = fName,
-            width = 10, height = 5, units = "in", res = 600, pointsize=8)
+            width = 8, height = 6, units = "in", res = 600, pointsize=8)
         
         
         print(m + theme_dark() +
@@ -544,7 +544,7 @@ for (s in c("baseline", "RCP85")) {
                         strip.text.y = element_text(size = 8)) +
                   #labs(title = paste0("Proportion cumulative du territoire productif où une forêt immature a brûlé\n",
                   scale_y_continuous(limits = c(0, yMax)) +
-                  facet_grid(~scenario) +
+                  #facet_grid(~scenario) +
                   labs(title = paste0("Cumulative proportion of productive area where immature stands were burned"),
                        subtitle = #paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
                            paste0("Median scenarios are highlighted in blue and percentiles ",
@@ -552,7 +552,7 @@ for (s in c("baseline", "RCP85")) {
                                          p[1], ", ", p[2], ", ", p[4], " and ", p[5],
                                          # ",\nsur un total de ", nRep, " réalisations."),
                         #sur un total de ", nRep, " réalisations."),
-                       " in yellow\n(Total of 1779 realizations)"),
+                       " in yellow\n(Total of 779 realizations)"),
                        
                        x = "",
                        #y = "Proportion cumulée")  +
@@ -708,7 +708,7 @@ require(ggplot2)
 for (s in c("baseline", "RCP85")) {
     ### selecting subsample and fetching treatment specific parameters
     # sexual maturity
-    prodLabel <- "late" # c("Early maturity", "Intermediate maturity", "Late maturity")
+    prodLabel <- "intermediate" # c("Early maturity", "Intermediate maturity", "Late maturity")
     prodNames <- unique(dfZone$productivity)[grep(prodLabel, tolower(unique(dfZone$productivity)))]
     prodIndex <- grep(prodLabel, prodClassesLabel)
    
