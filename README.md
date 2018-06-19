@@ -37,7 +37,7 @@ The study area is located east of [Lake Mistassini][7], Quebec, Canada, just sou
 
 The fire model is based on the simulation experiment described in [Cyr et al. (2016)][1]. The core of the model is a [cellular automaton][2] of stochastic propagation of fires to neighbouring cells until a predefined fire size is reached. 
 
-Targetted fire regime are predefined by the user, i.e. that the length of the fire cycle (or average area burned annually) and fire size distribution must be provided. At this stage, fire spread probability is homogenous across all eligible (flammable) cells, although the current model structure could allows for differential fire spread probabilities. Only ignition probabilities currently vary among zones submitted to different fire regimes.
+Targeted fire regime are predefined by the user, i.e. that the length of the fire cycle (or average area burned annually) and fire size distribution must be provided. At this stage, fire spread probability is homogeneous across all eligible (flammable) cells, although the current model structure could allow for differential fire spread probabilities. Only ignition probabilities currently vary among zones submitted to different fire regimes.
 
 -----------
 
@@ -53,9 +53,9 @@ To verify the fire model, we conducted 1000 simulations under a baseline scenari
 
 ![](figures/realizedFC_baseline.png)
 
-Targetted fire cycle was simulated with good precision when considering the entire study area (101-year global fire cycle).
+Targeted fire cycle was simulated with good precision when considering the entire study area (101-year global fire cycle).
 
-However, targetted fire cycles were not achieved for the smaller fire zones contained within the study area. Because our implementation of fire simulate the contagious nature of fire, adjacent fire zones affected each other's fire regimes. This is particularly noticeable for smaller fire zones that should have been affected by longer fire cycle, but that are located near fire zones with much higher fire activity (ex. zones G7 and G8). This is normal considering that fire zone boundaries are not impermeable to fire spread.
+However, targeted fire cycles were not achieved for the smaller fire zones contained within the study area. Because our implementation of fire simulate the contagious nature of fire, adjacent fire zones affected each other's fire regimes. This is particularly noticeable for smaller fire zones that should have been affected by longer fire cycle, but that are located near fire zones with much higher fire activity (ex. zones G7 and G8). This is normal considering that fire zone boundaries are not impermeable to fire spread.
 
 Moreover, the smaller the fire zone is the more dispersed the realized fire cycles are going to be. Similarly, the longer the fire cycle is relative to the length of the simulation (50 years, in the current experiment), the more dispersed the realized fire cycles are going to be. This is coherent with empirical observations and results from past simulation experiments.
 
@@ -71,7 +71,7 @@ Harvesting is simulated as a stratified-random draw across all eligible stands (
 
 ## Experimental design
 
-The simulation ensemble was produced using a full factorial design that included two climate scenarios and four harvesting treatments, which were each simulated a thousand times for a total of 8000 independant realizations. For each of these realizations, the occurrences of potential regeneration failure events were verified against three sets of stand maturity thresholds.
+The simulation ensemble was produced using a full factorial design that included two climate scenarios and four harvesting treatments, which were each simulated a thousand times for a total of 8000 independent realizations. For each of these realizations, the occurrences of potential regeneration failure events were verified against three sets of stand maturity thresholds.
 
 -----------
 
@@ -82,11 +82,11 @@ The simulation ensemble was produced using a full factorial design that included
 
 -----------
 
-## Additionnal information
+## Additional information
 
 In the root folder you will find the _R_ scripts that must be executed by the user, in opposition to those located in the [./scripts][2] folder. The latter are sourced by the former and do not necessitate direct interactions by the user unless he/she wishes to modify them.
 
-Don't hesitate to contact me should you have questions, comments or suggestions for improvement or additionnal functionalities.
+Don't hesitate to contact me should you have questions, comments or suggestions for improvement or additional functionalities.
 
 [Dominic Cyr][5]
 
