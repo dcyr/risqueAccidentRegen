@@ -4,6 +4,7 @@ author: "Repository maintained by Dominic Cyr; Project conducted in collaboratio
 output: 
   html_document: 
     keep_md: yes
+    toc: yes
 ---
 
 [Dominic Cyr][5]
