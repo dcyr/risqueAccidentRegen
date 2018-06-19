@@ -94,4 +94,4 @@ outputCompiled <- foreach(i = seq_along(x), .combine = "rbind") %dopar% {#
 stopCluster(cl)
 
 outputCompiled <- merge(outputCompiled, fireZoneArea)
-save(outputCompiled, file = "outputCompiled.RData")
+save(outputCompiled, file = "outputCompiledFire.RData")
