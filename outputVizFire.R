@@ -203,7 +203,7 @@ outputSummary <- outputCompiledFinal %>%
     mutate(calYear = year + initYear) %>%
     mutate(period = cut(calYear, breaks = c(periodBegins, 2100),
                         labels = periods, include.lowest = T)) %>%
-    group_by(period, replicate) %>%
+    group_by(period, replicate, scenario) %>%
     summarize(meanTSF = round((mean(meanTSF))),
               fireCycle = round((1/mean(areaBurned_ha/areaZone_ha))),
               propAAB = mean(areaBurned_ha/areaZone_ha)) %>%
@@ -215,12 +215,11 @@ fcSummary <- outputSummary %>%
     summarize(realizedFC_median = median(fireCycle),
               realizedFC_mean = 1/mean(propAAB)) %>%
     merge(filter(fireRegimeAttrib, scenario == "RCP85", Zone_LN == "total"),
-          by.x = "period", by.y = "period") #%>%
-    #merge(fireZoneArea)
+          by.x = "period", by.y = "period")
 
 
 ######################
-### Plotting
+### Plotting RCP 8.5 only
 
 require(ggplot2)
 options(scipen=999)
@@ -262,6 +261,81 @@ print(m + theme_dark() +
 
 dev.off()
 
+########################################
+### All scenario / periods, only total
+
+outputSummary <- outputCompiledFinal %>%
+    filter(scenario == "baseline",
+           zone == "total") %>%
+    mutate(period = "2011-2070") %>%
+    group_by(period, replicate, scenario) %>%
+    summarize(meanTSF = round((mean(meanTSF))),
+              fireCycle = round((1/mean(areaBurned_ha/areaZone_ha))),
+              propAAB = mean(areaBurned_ha/areaZone_ha)) %>%
+    arrange(period, replicate) %>%
+    rbind(outputSummary) %>%
+    mutate(label = paste(scenario, period)) %>%
+    mutate(label = gsub("RCP85", "RCP 8.5", label))
+
+
+fireRegimeAttrib$period <- as.character(fireRegimeAttrib$period)
+fireRegimeAttrib[fireRegimeAttrib$scenario == "baseline", "period"] <- "2011-2070"
+
+
+fcSummary <- outputSummary %>%
+    group_by(scenario,period) %>%
+    summarize(realizedFC_median = median(fireCycle),
+              realizedFC_mean = 1/mean(propAAB)) %>%
+    merge(filter(fireRegimeAttrib, Zone_LN == "total"),
+           by.x = "period", by.y = "period", all = T) %>%
+    mutate(scenario = scenario.y,
+           label = paste(scenario, period)) %>%
+    mutate(label = gsub("RCP85", "RCP 8.5", label)) %>%
+    distinct(period, scenario, realizedFC_mean, fireCycle, label)
+
+########################################
+### plotting
+
+require(ggplot2)
+options(scipen=999)
+m <- ggplot(outputSummary, aes(x=fireCycle)) +
+    geom_histogram() +#fill = "grey25"
+    facet_wrap(~label, ncol = 1) +#, scales = "free_x") +
+    
+    scale_x_log10(breaks = c(15, 30, 60, 125, 250, 500, 1000, 2000, 4000, 16000)) +
+    geom_vline(data = fcSummary,  aes(xintercept = fireCycle),
+               colour="lightblue", linetype = 3, size = 0.7, alpha = 1) +
+    geom_vline(data = fcSummary,  aes(xintercept = realizedFC_mean),
+               colour="yellow", linetype = 3, size = 0.5, alpha = 1)
+
+yMax <- layer_scales(m)$y$range$range[2]
+xMax <- layer_scales(m)$x$range$range[2]
+
+labelDF <-  data.frame(x = 10^xMax, y = yMax,
+                       label = fcSummary$label,
+                       target = paste("Target:", fcSummary$fireCycle, "years"),
+                       mean = paste("Average:", round(fcSummary$realizedFC_mean), "years"))
+
+png(filename = paste0("realizedFC_total.png"),
+    width = 4, height = 6, units = "in", res = 600, pointsize=10)
+
+print(m + theme_dark() +
+          theme(legend.position="top", legend.direction="horizontal",
+                axis.text.x = element_text(angle = 45, hjust = 1),
+                strip.text.y = element_text(size = 8))+
+          labs(title ="Distribution of realized fire cycles",
+               subtitle = "RCP 8.5 - Dotted lines indicate targetted (blue) and\nrealized (yellow) average fire cycles",
+               caption = paste("*Total of", length(grep("2011", outputSummary$period)), "realizations" ),
+               x = "Fire cycle (years)",
+               y = "Frequency") +
+          geom_text(aes(x, 0.9*y, label = target),
+                    data = labelDF, hjust = 1, size = 3, colour = "lightblue") +
+          geom_text(aes(x, 0.8*y, label = mean),
+                    data = labelDF, hjust = 1, size = 3, colour = "yellow"))
+
+
+
+dev.off()
 
 
 # ####################################################################################################

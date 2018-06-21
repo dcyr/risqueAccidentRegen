@@ -142,7 +142,7 @@ varPartition <- foreach(s = c("baseline", "RCP85"), .combine = "rbind") %do% {
             ## selecting fire year
             X <- dfDist %>%
                 filter(year == y, scenario == s, cover == sp) %>%
-                select(simID, harvestTreatment, propAAB, propHarvestedAverage)
+                select(simID, harvestTreatment, propAAB)
 
             ## selecting corresponding regen failure
             df <- dfCoverPad %>%
@@ -157,10 +157,26 @@ varPartition <- foreach(s = c("baseline", "RCP85"), .combine = "rbind") %do% {
             X <- df[,c("propAAB", "maturity", "harvestTreatment")]
             ## performing variance partitionning
 
-            part <- varpart(Y, ~propAAB, ~maturity, ~harvestTreatment, data = X)
-            
-            
+            part <- varpart(Y, ~propAAB, ~maturity, ~harvestTreatment, data = X, scale = F)
            
+            
+            # ########################
+            # ## analysis of residuals, same model, different object type
+            # fit=lm(Y$cumulPropBurned ~ X$propAAB + X$maturity + X$harvestTreatment)
+            # library(MASS)
+            # ########################
+            # png(paste0("normalityCheck_", gsub(" ", "",sp), "_", s, ".png"),
+            #     width = 600, height = 400)
+            #     sresid <- studres(fit) 
+            #     hist(sresid, freq=F,
+            #         main=paste0("Distribution of Studentized Residuals\n", sp, " - ", s, " scenario" ),
+            #         xlab = "Studentized residual")
+            #     xfit<-seq(min(sresid),max(sresid),length=150) 
+            #     yfit<-dnorm(xfit) 
+            #     lines(xfit, yfit)
+            # dev.off()
+            # #######################
+            
             # ## classic Venn
             # png(filename = paste0("vennDiagClassic_", gsub(" ", "", sp), "_",
             #                       s, "_", y, ".png"),
