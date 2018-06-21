@@ -1,14 +1,9 @@
----
-title: "Analyzing risk of regeneration failure in the managed boreal forest of North-western Quebec"
-author: "Repository maintained by Dominic Cyr; Project conducted in collaboration with Sylvie Gauthier and Tadeusz Splawinski"
-output: 
-  html_document: 
-    keep_md: yes
----
+# Analyzing risk of regeneration failure in the managed boreal forest of North-western Quebec
+Repository maintained by Dominic Cyr; Project conducted in collaboration with Sylvie Gauthier and Tadeusz Splawinski  
 
 [Dominic Cyr][5]
 
-Updated on Jun 19 2018
+Updated on Jun 21 2018
 
 
 -------
@@ -18,7 +13,7 @@ Updated on Jun 19 2018
 
 The present repository contains the necessary information to reproduce the simulation experiment conducted by Splawinski _et al_. (under review). That experiment aims at assessing the relative risk of regeneration failure following successive disturbances in a variety of contexts.
 
-The following provides a general description of the experiment and point to more detailed content that describes the simulation steps and data processing pipeline that allows to reproduce the experiment conducted by Splawinski _et al_. (under review). We strongly suggest that you get a look at [this graphic illustration of the simulation and data processing pipeline][6], which will help you navigate the various scripts and input files needed to reproduce the experiment.
+The following provides a general description of the experiment and point to more detailed content that describes the simulation steps and data processing pipeline that allows to reproduce the experiment conducted by Splawinski _et al_. (under review). We also invite you to get a look at [this graphic illustration of the simulation and data processing pipeline][6], which will help you navigate the various scripts and input files needed to reproduce the experiment.
 
 
 -----------
