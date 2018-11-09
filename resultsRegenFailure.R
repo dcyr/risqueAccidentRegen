@@ -4,7 +4,7 @@
 ######
 ###### Dominic Cyr, in collaboration with Tadeusz Splawinski and Sylvie Gauthier
 rm(list = ls())
-setwd("~/Travail/SCF/regenFailureRiskAssessment")
+setwd("E:/SCF/regenFailureRiskAssessment")
 ####################################################################################################
 ####################################################################################################
 wwd <- paste(getwd(), Sys.Date(), sep = "/")
@@ -422,12 +422,12 @@ prodClassesLabel <- c("early", "intermediate", "late")
 ### summary histogram
 cols = c("Black Spruce" = "darkolivegreen",
          "Jack Pine" = "gold2",
-         "Global" = "grey85")
+         "Global" = "grey50")
 require(ggplot2)
 p <- ggplot(labelDF, aes(fill = cover, y = medianRate*100, x = xLab)) +
     geom_col(position = position_dodge(width=0.9)) +
     scale_fill_manual(name = "Cover type", values=cols) +
-    theme_dark() +
+    theme_bw() +
     facet_grid(scenario~productivity) +
     labs(y = "Median annual rate (%)",
          x = "Harvesting rate",
@@ -487,21 +487,21 @@ for (s in c("baseline", "RCP85")) {
             m <- ggplot(df, aes(x=timestep + 2015, y = 100*cumulpropBurned, group = ID)) +
                 geom_line(colour = "black", alpha = 0.1) +#fill = "grey25"
                 geom_line(aes(y = 100*p.500, group = 1),
-                          colour = "lightblue",
+                          colour = "indianred",
                           linetype = 1, size = 0.7, alpha = 1) + #fill = "grey25"
                 geom_line(aes(y = 100*p.050, group = 1),
-                          colour = "yellow",
+                          colour = "lightblue",
                           linetype = 3, size = 0.3, alpha = 1) +
                 geom_line(aes(y = 100*p.950, group = 1),
-                          colour = "yellow",
+                          colour = "lightblue",
                           linetype = 3, size = 0.3, alpha = 1) +
                 geom_line(aes(y = 100*p.250, group = 1),
-                          colour = "yellow",
+                          colour = "lightblue",
                           linetype = 4, size = 0.4, alpha = 1) +
                 geom_line(aes(y = 100*p.750, group = 1),
-                          colour = "yellow",
+                          colour = "lightblue",
                           linetype = 4, size = 0.4, alpha = 1) +
-                theme_dark() #+
+                theme_bw() #+
                 # geom_smooth(span = 0.7, aes_string(y = names(p)[2], group = 1),
                 #             colour="lightblue", linetype = 1, size = 0.7, alpha = 1) +
                 # geom_smooth(span = 0.2, aes_string(y = names(p)[1], group = 1),
@@ -533,7 +533,7 @@ for (s in c("baseline", "RCP85")) {
                 width = 7.5, height = figHeight, units = "in", res = 600, pointsize=8)
 
 
-            print(m + theme_dark() +
+            print(m + theme_bw() +
                       theme(legend.position="top", legend.direction="horizontal",
                             axis.text.x = element_text(angle = 45, hjust = 1),
                             strip.text.y = element_text(size = 8)) +
@@ -541,12 +541,12 @@ for (s in c("baseline", "RCP85")) {
                       labs(title = paste0("Cumulative proportion of productive area where immature stands were burned\n",
                                           sName[s]),
                            subtitle = #paste0("En bleu sont illustrées les médianes et en jaune les percentiles ",
-                               paste0("Median scenarios are highlighted in blue and percentiles ",
+                               paste0("Median scenarios are highlighted in red and percentiles ",
                                              # p[1], ", ", p[2], ", ", p[4], " et ", p[5],
                                              p[1], ", ", p[2], ", ", p[4], " and ", p[5],
                                              # ",\nsur un total de ", nRep, " réalisations."),
                             #sur un total de ", nRep, " réalisations."),
-                           " in yellow\n(Total of ", nRep, " realizations)"),
+                           " in blue\n(Total of ", nRep, " simulations)"),
 
                            x = "",
                            #y = "Proportion cumulée")  +

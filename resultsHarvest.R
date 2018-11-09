@@ -218,7 +218,3 @@ for (p in c("p05", "p10", "p25", "p50")) {
 
 ### 
 
-
-
-colorRampPalette()
-

@@ -7,7 +7,7 @@
 ####################################################################################################
 ####################################################################################################
 rm(list=ls())
-setwd("~/Travail/SCF/regenFailureRiskAssessment")
+setwd("E:/SCF/regenFailureRiskAssessment")
 ####################################################################################################
 ####################################################################################################
 wwd <- paste(getwd(), Sys.Date(), sep="/")
@@ -304,9 +304,9 @@ m <- ggplot(outputSummary, aes(x=fireCycle)) +
     
     scale_x_log10(breaks = c(15, 30, 60, 125, 250, 500, 1000, 2000, 4000, 16000)) +
     geom_vline(data = fcSummary,  aes(xintercept = fireCycle),
-               colour="lightblue", linetype = 3, size = 0.7, alpha = 1) +
+               colour="darkgreen", linetype = 3, size = 0.7, alpha = 1) +
     geom_vline(data = fcSummary,  aes(xintercept = realizedFC_mean),
-               colour="yellow", linetype = 3, size = 0.5, alpha = 1)
+               colour="indianred", linetype = 3, size = 0.5, alpha = 1)
 
 yMax <- layer_scales(m)$y$range$range[2]
 xMax <- layer_scales(m)$x$range$range[2]
@@ -317,21 +317,21 @@ labelDF <-  data.frame(x = 10^xMax, y = yMax,
                        mean = paste("Average:", round(fcSummary$realizedFC_mean), "years"))
 
 png(filename = paste0("realizedFC_total.png"),
-    width = 4, height = 6, units = "in", res = 600, pointsize=10)
+    width = 5, height = 6, units = "in", res = 600, pointsize=8)
 
-print(m + theme_dark() +
+print(m + theme_bw() +
           theme(legend.position="top", legend.direction="horizontal",
                 axis.text.x = element_text(angle = 45, hjust = 1),
                 strip.text.y = element_text(size = 8))+
-          labs(title ="Distribution of realized fire cycles",
-               subtitle = "RCP 8.5 - Dotted lines indicate targetted (blue) and\nrealized (yellow) average fire cycles",
+          labs(title ="Distribution of simulated fire cycles",
+               subtitle = "Dotted lines indicate targetted (green) and simulated (red)\naverage fire cycles",
                caption = paste("*Total of", length(grep("2011", outputSummary$period)), "realizations" ),
                x = "Fire cycle (years)",
                y = "Frequency") +
           geom_text(aes(x, 0.9*y, label = target),
-                    data = labelDF, hjust = 1, size = 3, colour = "lightblue") +
+                    data = labelDF, hjust = 1, size = 3, colour = "darkgreen") +
           geom_text(aes(x, 0.8*y, label = mean),
-                    data = labelDF, hjust = 1, size = 3, colour = "yellow"))
+                    data = labelDF, hjust = 1, size = 3, colour = "indianred"))
 
 
 

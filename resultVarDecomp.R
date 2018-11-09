@@ -1,6 +1,6 @@
 ###### Dominic Cyr, in collaboration with Tadeusz Splawinski and Sylvie Gauthier
 rm(list = ls())
-setwd("~/Travail/SCF/regenFailureRiskAssessment")
+setwd("E:/SCF/regenFailureRiskAssessment")
 ####################################################################################################
 ####################################################################################################
 wwd <- paste(getwd(), Sys.Date(), sep = "/")
@@ -125,7 +125,7 @@ dfCoverPad <- dfCover %>%
 
 require(doSNOW)
 require(parallel)
-clusterN <-  max(1, floor(0.9*detectCores()))  ### choose number of nodes to add to cluster.
+clusterN <-  max(1, floor(0.75*detectCores()))  ### choose number of nodes to add to cluster.
 # #######
 cl = makeCluster(clusterN, outfile = "") ## 
 registerDoSNOW(cl)
@@ -280,7 +280,7 @@ png(filename = "variationDecomp.png",
     width = 7, height = 5, units = "in", res = 300, pointsize=8)
 
 print(p +
-          theme_dark()+
+          theme_bw()+
           labs(title ="Variation partitioning of rate of potential regeneration failure",
                subtitle = "After 50 years of simulation (horizon 2065)",
                #caption = paste("*Treatment factors were orthogonal, hence the absence of shared explained variation." ),
